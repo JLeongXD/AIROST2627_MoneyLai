@@ -17,6 +17,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [activityName, setActivityName] = useState("");
   const [storageMessage, setStorageMessage] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -43,28 +44,44 @@ export default function Home() {
       return;
     }
 
-    const newClaim: Claim = {
-      id: crypto.randomUUID(),
+    const claimData: Claim = {
+      id: editingId ?? crypto.randomUUID(),
       activityName: activityName.trim(),
       amount: numericAmount,
       description: description.trim(),
     };
 
-    setClaims((previousClaims) => [newClaim, ...previousClaims]);
+    if (editingId !== null) {
+      setClaims((previousClaims) =>
+        previousClaims.map((claim) =>
+          claim.id === editingId ? claimData : claim
+        )
+      );
+    } else {
+      setClaims((previousClaims) => [claimData, ...previousClaims]);
+    }
 
+    setEditingId(null);
     setActivityName("");
     setAmount("");
     setDescription("");
     setError("");
+    setStorageMessage("Changes are not saved locally yet.");
   }
 
   function handleDelete(claimId: string) {
     setClaims((previousClaims) =>
       previousClaims.filter((claim) => claim.id !== claimId)
     );
+
+    if (editingId === claimId) {
+      handleCancelEdit();
+    }
+
+    setStorageMessage("Changes are not saved locally yet.");
   }
 
-function handleSave() {
+  function handleSave() {
   try {
     const claimsJSON = JSON.stringify(claims);
 
@@ -74,7 +91,7 @@ function handleSave() {
   } catch {
     setStorageMessage("Unable to save claims. Please try again.");
   }
-}
+  }
 
   function handleLoad() {
     try {
@@ -113,6 +130,32 @@ function handleSave() {
     }
   }
 
+  function handleEdit(claim: Claim) {
+    setEditingId(claim.id);
+
+    setActivityName(claim.activityName);
+    setAmount(claim.amount.toString());
+    setDescription(claim.description);
+
+    setError("");
+    setStorageMessage("");
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  function handleCancelEdit() {
+    setEditingId(null);
+
+    setActivityName("");
+    setAmount("");
+    setDescription("");
+
+    setError("");
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900">
       <div className="mx-auto max-w-xl">
@@ -125,7 +168,9 @@ function handleSave() {
         </header>
 
         <section className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold">New Expense Claim</h2>
+          <h2 className="text-xl font-semibold">
+            {editingId !== null ? "Edit Expense Claim" : "New Expense Claim"}
+          </h2>
 
           <p className="mt-1 text-sm text-slate-500">
             Enter the amount you paid and describe the expense.
@@ -211,12 +256,25 @@ function handleSave() {
               </p>
             )}
 
-            <button
-              type="submit"
-              className="w-full rounded-lg bg-blue-700 px-4 py-3 font-medium text-white transition-colors hover:bg-blue-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-700"
-            >
-              Submit Claim
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                className="flex-1 rounded-lg bg-blue-700 px-4 py-3 font-medium text-white hover:bg-blue-800"
+              >
+                {editingId !== null ? "Update Claim" : "Submit Claim"}
+              </button>
+
+              {editingId !== null && (
+                <button
+                  type="button"
+                  onClick={handleCancelEdit}
+                  className="rounded-lg border border-slate-300 px-4 py-3 font-medium hover:bg-slate-100"
+                >
+                  Cancel
+                </button>
+              )}
+            </div>
+
           </form>
         </section>
 
@@ -268,13 +326,23 @@ function handleSave() {
                   key={claim.id}
                   className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(claim.id)}
-                    className="mt-4 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
-                  >
-                    Delete
-                  </button>
+                  <div className="mt-4 flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => handleEdit(claim)}
+                      className="rounded-lg px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50"
+                    >
+                      Edit
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(claim.id)}
+                      className="rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                    >
+                      Delete
+                    </button>
+                  </div>
 
                   <p className="mb-1 text-sm font-medium text-blue-700">
                     {claim.activityName}
@@ -294,8 +362,8 @@ function handleSave() {
         </section>
 
         <p className="mt-8 text-center text-xs text-slate-500">
-          Practice mode: claims are stored temporarily and will be cleared
-          when you refresh this page.
+          Practice mode: Claims are stored temporarily. Click "Save Locally"
+          to keep them in this browser and "Load Saved Claims" to restore them.
         </p>
       </div>
     </main>
