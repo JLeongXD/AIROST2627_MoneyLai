@@ -16,6 +16,7 @@ export default function Home() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [error, setError] = useState("");
   const [activityName, setActivityName] = useState("");
+  const [storageMessage, setStorageMessage] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -61,6 +62,55 @@ export default function Home() {
     setClaims((previousClaims) =>
       previousClaims.filter((claim) => claim.id !== claimId)
     );
+  }
+
+function handleSave() {
+  try {
+    const claimsJSON = JSON.stringify(claims);
+
+    localStorage.setItem("moneylai-claims", claimsJSON);
+
+    setStorageMessage("Claims saved in this browser.");
+  } catch {
+    setStorageMessage("Unable to save claims. Please try again.");
+  }
+}
+
+  function handleLoad() {
+    try {
+      const savedClaims = localStorage.getItem("moneylai-claims");
+
+      if (savedClaims === null) {
+        setStorageMessage("No saved claims found.");
+        return;
+      }
+
+      const parsedClaims = JSON.parse(savedClaims);
+
+      const isValid =
+        Array.isArray(parsedClaims) &&
+        parsedClaims.every(
+          (claim) =>
+            claim !== null &&
+            typeof claim === "object" &&
+            typeof claim.id === "string" &&
+            typeof claim.activityName === "string" &&
+            typeof claim.amount === "number" &&
+            Number.isFinite(claim.amount) &&
+            claim.amount > 0 &&
+            typeof claim.description === "string"
+        );
+
+      if (!isValid) {
+        setStorageMessage("The saved data is invalid.");
+        return;
+      }
+
+      setClaims(parsedClaims);
+      setStorageMessage("Saved claims loaded.");
+    } catch {
+      setStorageMessage("Unable to load saved claims.");
+    }
   }
 
   return (
@@ -180,6 +230,28 @@ export default function Home() {
               {claims.length} {claims.length === 1 ? "claim" : "claims"}
             </span>
           </div>
+
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={handleSave}
+              className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-900"
+            >
+              Save Locally
+            </button>
+
+            <button
+              type="button"
+              onClick={handleLoad}
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium hover:bg-slate-100"
+            >
+              Load Saved Claims
+            </button>
+          </div>
+
+          <p role="status" className="mt-3 text-sm text-slate-600">
+            {storageMessage}
+          </p>
 
           {claims.length === 0 ? (
             <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-8 text-center">
