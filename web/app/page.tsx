@@ -57,6 +57,12 @@ export default function Home() {
     setError("");
   }
 
+  function handleDelete(claimId: string) {
+    setClaims((previousClaims) =>
+      previousClaims.filter((claim) => claim.id !== claimId)
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900">
       <div className="mx-auto max-w-xl">
@@ -190,6 +196,14 @@ export default function Home() {
                   key={claim.id}
                   className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(claim.id)}
+                    className="mt-4 rounded-lg px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-600"
+                  >
+                    Delete
+                  </button>
+
                   <p className="mb-1 text-sm font-medium text-blue-700">
                     {claim.activityName}
                   </p>
