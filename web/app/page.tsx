@@ -5,6 +5,7 @@ import type { FormEvent } from "react";
 
 type Claim = {
   id: string;
+  activityName: string;
   amount: number;
   description: string;
 };
@@ -14,9 +15,15 @@ export default function Home() {
   const [description, setDescription] = useState("");
   const [claims, setClaims] = useState<Claim[]>([]);
   const [error, setError] = useState("");
+  const [activityName, setActivityName] = useState("");
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (!activityName.trim()) {
+      setError("Please enter an activity name.");
+      return;
+    }
 
     const numericAmount = Number(amount);
 
@@ -37,12 +44,14 @@ export default function Home() {
 
     const newClaim: Claim = {
       id: crypto.randomUUID(),
+      activityName: activityName.trim(),
       amount: numericAmount,
       description: description.trim(),
     };
 
     setClaims((previousClaims) => [newClaim, ...previousClaims]);
 
+    setActivityName("");
     setAmount("");
     setDescription("");
     setError("");
@@ -71,6 +80,27 @@ export default function Home() {
             onSubmit={handleSubmit}
             className="mt-6 space-y-5"
           >
+            <div>
+              <label
+                htmlFor="activityName"
+                className="block text-sm font-medium"
+              >
+                Activity Name
+              </label>
+
+              <input
+                id="activityName"
+                name="activityName"
+                type="text"
+                required
+                maxLength={100}
+                value={activityName}
+                onChange={(event) => setActivityName(event.target.value)}
+                placeholder="e.g. Robotics Workshop"
+                className="mt-2 w-full rounded-lg border border-slate-300 bg-white p-3 outline-none placeholder:text-slate-400 focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+
             <div>
               <label
                 htmlFor="amount"
@@ -160,6 +190,10 @@ export default function Home() {
                   key={claim.id}
                   className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm"
                 >
+                  <p className="mb-1 text-sm font-medium text-blue-700">
+                    {claim.activityName}
+                  </p>
+
                   <p className="text-lg font-semibold">
                     RM {claim.amount.toFixed(2)}
                   </p>
