@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
+import Link from "next/link";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -115,6 +116,14 @@ export default function LoginPage() {
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
         </form>
+
+        <Link
+          href="/activities"
+          className="mt-4 block text-center text-sm font-medium text-blue-700 underline"
+        >
+          View Activities
+        </Link>
+
       </section>
     </main>
   );
