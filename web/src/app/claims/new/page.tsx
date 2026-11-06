@@ -51,7 +51,12 @@ export default function NewClaimPage() {
         .order("name");
 
       if (error) {
-        setMessage("Unable to load activities.");
+        console.error("Failed to load activities:", error);
+
+        setMessage(
+          `Unable to load activities: ${error.message} (Code: ${error.code})`
+        );
+
         return;
       }
 
