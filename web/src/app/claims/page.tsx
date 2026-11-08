@@ -226,6 +226,15 @@ export default function MyClaimsPage() {
                   <p className="mt-4 text-xs text-slate-500">
                     Created: {formatDate(claim.created_at)}
                   </p>
+
+                  {claim.status === "draft" && (
+                    <Link
+                        href={`/claims/${claim.id}/edit`}
+                        className="mt-4 inline-block text-blue-700 underline"
+                    >
+                        Edit
+                    </Link>
+                    )}
                 </li>
               ))}
             </ul>
