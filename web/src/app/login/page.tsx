@@ -4,12 +4,15 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -41,6 +44,7 @@ export default function LoginPage() {
 
       setPassword("");
       setMessage(`Signed in successfully as ${data.user.email}.`);
+      router.replace("/claims");
     } catch {
       setMessage(
         "Unable to connect. Check your configuration and internet connection."
