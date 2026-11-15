@@ -1,0 +1,393 @@
+.layout {
+  min-height: 100svh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #fafbf8;
+}
+.story {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 42px clamp(32px, 5vw, 80px) 30px;
+  color: #fff;
+  background: #123e35;
+}
+.story::after {
+  content: "";
+  position: absolute;
+  width: 510px;
+  height: 510px;
+  border: 1px solid #ffffff0e;
+  border-radius: 50%;
+  right: -290px;
+  top: -170px;
+  box-shadow:
+    0 0 0 65px #ffffff03,
+    0 0 0 130px #ffffff03;
+  pointer-events: none;
+}
+.brand {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 10px;
+  color: #fff;
+  font-size: 25px;
+  font-weight: 750;
+  letter-spacing: -1px;
+  z-index: 1;
+}
+.brand:hover {
+  text-decoration: none;
+}
+.brandMark {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 11px;
+  background: #d4ed9b;
+  color: #123e35;
+  font-size: 22px;
+  letter-spacing: -2px;
+  padding-right: 2px;
+}
+.brandDot {
+  color: #d4ed9b;
+  margin-left: -10px;
+}
+.storyContent {
+  padding: 64px 0 48px;
+  position: relative;
+  z-index: 1;
+}
+.eyebrow,
+.formEyebrow {
+  display: block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+.eyebrow {
+  color: #d4ed9b;
+  margin-bottom: 22px;
+}
+.story h1 {
+  font-size: clamp(40px, 4.4vw, 66px);
+  line-height: 1.09;
+  letter-spacing: -2.7px;
+  font-weight: 600;
+  margin-bottom: 22px;
+}
+.story h1 span {
+  color: #d4ed9b;
+}
+.storyContent > p {
+  max-width: 345px;
+  color: #c0d3cc;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.workflow {
+  max-width: 380px;
+  margin-top: 36px;
+  border: 1px solid #ffffff24;
+  border-radius: 16px;
+  background: #ffffff05;
+  padding: 20px 23px;
+}
+.workflowHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #bad1c6;
+  font-size: 9px;
+  letter-spacing: 1.6px;
+  font-weight: 700;
+}
+.workflowHeader > span:last-child {
+  font-size: 19px;
+  line-height: 1;
+  color: #d4ed9b;
+}
+.workflow ol {
+  list-style: none;
+  margin: 20px 0 0;
+  padding: 0;
+}
+.workflow li {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  position: relative;
+}
+.workflow li + li {
+  margin-top: 22px;
+}
+.workflow li:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: 34px;
+  width: 1px;
+  height: 17px;
+  background: #ffffff25;
+}
+.stepNumber {
+  flex: 0 0 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffffff30;
+  border-radius: 50%;
+  color: #d4ed9b;
+  font-size: 10px;
+}
+.workflow strong {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+}
+.workflow small {
+  display: block;
+  font-size: 11px;
+  color: #c0d3cc;
+  margin-top: 2px;
+}
+.storyFooter {
+  color: #a7c0b5;
+  font-size: 11px;
+}
+.formArea {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 72px 40px;
+}
+.formCard {
+  width: 100%;
+  max-width: 365px;
+}
+.formIcon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid #dce6d8;
+  border-radius: 14px;
+  background: #f0f5e9;
+  color: #315e42;
+  font-size: 27px;
+  margin-bottom: 30px;
+}
+.formEyebrow {
+  color: #5d735e;
+  font-size: 9px;
+  margin-bottom: 12px;
+}
+.formCard h2 {
+  font-size: 34px;
+  font-weight: 600;
+  letter-spacing: -1.3px;
+  line-height: 1.2;
+  margin-bottom: 12px;
+}
+.intro {
+  color: #697971;
+  font-size: 13px;
+  line-height: 1.7;
+  margin-bottom: 0;
+}
+.form {
+  margin-top: 30px;
+}
+.form :global(.field) {
+  margin-bottom: 20px;
+}
+.form :global(.field) label {
+  color: #2d4036;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.form input {
+  min-height: 49px;
+  padding: 12px 14px;
+  border: 1px solid #d8e0d6;
+  border-radius: 9px;
+  background: #fff;
+  color: #172d2b;
+  font-size: 14px;
+  transition:
+    border-color 150ms,
+    box-shadow 150ms;
+}
+.form input::placeholder {
+  color: #8a948c;
+}
+.form input:hover:not(:disabled) {
+  border-color: #a4b7a4;
+}
+.form input:focus {
+  border-color: #477757;
+  outline: 2px solid #c4dcc3;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px #e7efe3;
+}
+.submit {
+  width: 100%;
+  min-height: 49px;
+  border: 1px solid #123e35;
+  border-radius: 9px;
+  background: #123e35;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 5px;
+  box-shadow: 0 4px 9px #123e3512;
+  transition:
+    background 150ms,
+    box-shadow 150ms;
+}
+.submit:hover:not(:disabled) {
+  background: #1e5748;
+  box-shadow: 0 5px 14px #123e3525;
+}
+.switchButton {
+  display: block;
+  margin: 20px auto 0;
+  padding: 5px 8px;
+  border: 0;
+  background: transparent;
+  color: #315e42;
+  font-size: 12px;
+}
+.switchButton:hover:not(:disabled) {
+  text-decoration: underline;
+}
+.accountNote {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+  padding-top: 24px;
+  border-top: 1px solid #e1e7de;
+  color: #718071;
+}
+.accountNote > span {
+  font-size: 25px;
+  color: #6c8767;
+}
+.accountNote p {
+  font-size: 11px;
+  line-height: 1.8;
+  margin: 0;
+}
+.accountNote strong {
+  color: #3a4e3e;
+  font-weight: 600;
+}
+.formFooter {
+  position: absolute;
+  bottom: 25px;
+  margin: 0;
+  color: #748171;
+  font-size: 10px;
+}
+.formCard :global(.notice) {
+  margin-top: 20px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+@media (min-width: 1500px) {
+  .story {
+    padding-left: max(80px, calc((100vw - 1220px) / 2));
+  }
+}
+@media (max-width: 850px) {
+  .story {
+    padding: 32px;
+  }
+  .story h1 {
+    font-size: 43px;
+    letter-spacing: -1.7px;
+  }
+  .workflow {
+    padding: 18px;
+  }
+  .formArea {
+    padding: 60px 30px;
+  }
+  .formCard h2 {
+    font-size: 30px;
+  }
+}
+@media (max-width: 650px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  .story {
+    padding: 24px;
+  }
+  .brand {
+    font-size: 22px;
+  }
+  .brandMark {
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    border-radius: 9px;
+  }
+  .storyContent {
+    padding: 30px 0 0;
+  }
+  .eyebrow {
+    font-size: 9px;
+    margin-bottom: 14px;
+  }
+  .story h1 {
+    font-size: 37px;
+    margin-bottom: 14px;
+  }
+  .storyContent > p {
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+  .workflow,
+  .storyFooter {
+    display: none;
+  }
+  .formArea {
+    padding: 34px 24px 26px;
+  }
+  .formIcon {
+    display: none;
+  }
+  .formCard h2 {
+    font-size: 29px;
+  }
+  .form {
+    margin-top: 24px;
+  }
+  .form input {
+    font-size: 16px;
+  }
+  .accountNote {
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+  .formFooter {
+    position: static;
+    margin-top: 30px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .form input,
+  .submit {
+    transition: none;
+  }
+}

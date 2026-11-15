@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/client";
 import { useAuth } from "@/components/AuthProvider";
 import { errorMessage } from "@/lib/domain";
 import { Field, Notice } from "@/components/UI";
+import styles from "./LoginPage.module.css";
 export default function LoginPage() {
   const { user, ready, error: accountError } = useAuth();
   const router = useRouter();
@@ -62,35 +63,71 @@ export default function LoginPage() {
     }
   }
   return (
-    <main className="auth-layout">
-      <section className="auth-story">
-        <Link className="brand" href="/">
-          <span className="brand-mark">M</span>MoneyLai.
+    <main className={styles.layout}>
+      <section className={styles.story} aria-labelledby="story-title">
+        <Link className={styles.brand} href="/" aria-label="MoneyLai home">
+          <span className={styles.brandMark} aria-hidden="true">
+            M
+          </span>
+          MoneyLai<span className={styles.brandDot}>.</span>
         </Link>
-        <div>
-          <span className="eyebrow">MADE FOR YOUR CLUB</span>
-          <h1>
+        <div className={styles.storyContent}>
+          <span className={styles.eyebrow}>CLUB FINANCES, SIMPLIFIED</span>
+          <h1 id="story-title">
             Less chasing.
             <br />
-            More creating.
+            <span>More creating.</span>
           </h1>
           <p>
             Give every expense a home. Keep budgets clear and reimbursements
             moving.
           </p>
-          <div className="auth-story-tags">
-            <span>01 / Submit</span>
-            <span>02 / Review</span>
-            <span>03 / Reimburse</span>
+          <div className={styles.workflow} aria-label="Reimbursement workflow">
+            <div className={styles.workflowHeader}>
+              <span>THE MONEYLAI WAY</span>
+              <span aria-hidden="true">↗</span>
+            </div>
+            <ol>
+              <li>
+                <span className={styles.stepNumber}>01</span>
+                <div>
+                  <strong>Submit your claim</strong>
+                  <small>Add your expenses and receipts.</small>
+                </div>
+              </li>
+              <li>
+                <span className={styles.stepNumber}>02</span>
+                <div>
+                  <strong>Keep everyone in the loop</strong>
+                  <small>Follow your treasurer’s review.</small>
+                </div>
+              </li>
+              <li>
+                <span className={styles.stepNumber}>03</span>
+                <div>
+                  <strong>Get reimbursed</strong>
+                  <small>One clear record, from start to finish.</small>
+                </div>
+              </li>
+            </ol>
           </div>
         </div>
-        <small>Your next great event starts with a little clarity.</small>
+        <small className={styles.storyFooter}>
+          Less paperwork. More possibilities.
+        </small>
       </section>
-      <section className="auth-form-area">
-        <div className="auth-card">
-          <span className="eyebrow">WELCOME TO MONEYLAI</span>
-          <h2>{forgot ? "Forgot your password?" : "Welcome back."}</h2>
-          <p>
+      <section className={styles.formArea} aria-labelledby="login-title">
+        <div className={styles.formCard}>
+          <div className={styles.formIcon} aria-hidden="true">
+            ↗
+          </div>
+          <span className={styles.formEyebrow}>
+            {forgot ? "ACCOUNT RECOVERY" : "YOUR CLUB WORKSPACE"}
+          </span>
+          <h2 id="login-title">
+            {forgot ? "Let’s get you back in." : "Welcome back."}
+          </h2>
+          <p className={styles.intro}>
             {forgot
               ? "We’ll help you get back into your account."
               : "Sign in to your club finance workspace."}
@@ -98,7 +135,12 @@ export default function LoginPage() {
           {accountError && <Notice tone="error">{accountError}</Notice>}
           {error && <Notice tone="error">{error}</Notice>}
           {message && <Notice tone="success">{message}</Notice>}
-          <form onSubmit={submit} noValidate>
+          <form
+            className={styles.form}
+            onSubmit={submit}
+            noValidate
+            aria-busy={busy}
+          >
             <Field label="Email address" id="email">
               <input
                 id="email"
@@ -116,13 +158,14 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   autoComplete="current-password"
+                  placeholder="Enter your password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={busy}
                 />
               </Field>
             )}
-            <button className="button primary full" disabled={busy}>
+            <button className={styles.submit} disabled={busy}>
               {busy
                 ? "Please wait…"
                 : forgot
@@ -131,7 +174,8 @@ export default function LoginPage() {
             </button>
           </form>
           <button
-            className="text-button auth-switch"
+            className={styles.switchButton}
+            disabled={busy}
             onClick={() => {
               setForgot((v) => !v);
               setError("");
@@ -140,10 +184,18 @@ export default function LoginPage() {
           >
             {forgot ? "Back to sign in" : "Forgot password?"}
           </button>
-          <p className="auth-note">
-            New here? Ask your club treasurer for an account.
-          </p>
+          <div className={styles.accountNote}>
+            <span aria-hidden="true">◎</span>
+            <p>
+              <strong>New to MoneyLai?</strong>
+              <br />
+              Ask your club treasurer for an account.
+            </p>
+          </div>
         </div>
+        <p className={styles.formFooter}>
+          A little clarity for every club expense.
+        </p>
       </section>
     </main>
   );
