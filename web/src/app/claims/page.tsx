@@ -50,6 +50,8 @@ export default function MyClaimsPage() {
   const [claims, setClaims] = useState<Claim[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState("");
 
   useEffect(() => {
     let isActive = true;
@@ -121,6 +123,66 @@ export default function MyClaimsPage() {
     };
   }, []);
 
+  async function handleDelete(claimId: string) {
+    if (deletingId !== null) return;
+
+    const confirmed = window.confirm(
+      "Delete this draft? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    setDeletingId(claimId);
+    setDeleteMessage("");
+
+    try {
+      const supabase = createClient();
+
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError || !user) {
+        setDeleteMessage("Please sign in before deleting a draft.");
+        return;
+      }
+
+      const { data, error: deleteError } = await supabase
+        .from("claims")
+        .delete()
+        .eq("id", claimId)
+        .eq("claimant_id", user.id)
+        .eq("status", "draft")
+        .select("id")
+        .maybeSingle();
+
+      if (deleteError) {
+        console.error("Failed to delete draft:", deleteError);
+        setDeleteMessage("Unable to delete the draft. Please try again.");
+        return;
+      }
+
+      if (!data) {
+        setDeleteMessage(
+          "The draft was not deleted. It may no longer be available or deletable."
+        );
+        return;
+      }
+
+      setClaims((previousClaims) =>
+        previousClaims.filter((claim) => claim.id !== data.id)
+      );
+
+      setDeleteMessage("Draft deleted successfully.");
+    } catch (deleteError) {
+      console.error("Failed to connect:", deleteError);
+      setDeleteMessage("Connection failed. Please try again.");
+    } finally {
+      setDeletingId(null);
+    }
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10 text-slate-900">
       <div className="mx-auto max-w-3xl">
@@ -156,6 +218,10 @@ export default function MyClaimsPage() {
             Sign In
           </Link>
         </nav>
+
+        <p role="status" className="mt-4 text-sm text-slate-700">
+          {deleteMessage}
+        </p>
 
         {isLoading ? (
           <p role="status" className="mt-8 text-slate-600">
@@ -234,6 +300,17 @@ export default function MyClaimsPage() {
                     >
                         Edit
                     </Link>
+                    )}
+
+                    {claim.status === "draft" && (
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(claim.id)}
+                        disabled={deletingId !== null}
+                        className="ml-4 text-red-600 underline disabled:opacity-50"
+                      >
+                        {deletingId === claim.id ? "Deleting..." : "Delete"}
+                      </button>
                     )}
                 </li>
               ))}
