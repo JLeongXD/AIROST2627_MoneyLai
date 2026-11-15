@@ -1,12 +1,15 @@
 {
-  "name": "web",
+  "name": "moneylai",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test tests/domain.test.cjs",
+    "test:database": "node tests/database.test.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
