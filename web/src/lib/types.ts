@@ -1,4 +1,4 @@
-export type Role = "member" | "treasurer";
+export type Role = "member" | "treasurer" | "president";
 export type ClaimStatus =
   "draft" | "submitted" | "approved" | "rejected" | "paid";
 export type Money = number | string;
@@ -72,4 +72,20 @@ export type ActivityEvent = {
   new_budget: Money;
   note: string;
   created_at: string;
+};
+
+export type PresidentClaim = {
+  id: string;
+  claimant_name: string;
+  activity_id: string;
+  activity_name: string;
+  amount: Money;
+  description: string;
+  status: ClaimStatus;
+  submitted_at: string | null;
+};
+export type PresidentSnapshot = {
+  activities: Activity[];
+  claims: PresidentClaim[];
+  claim_count: number;
 };

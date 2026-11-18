@@ -650,6 +650,83 @@ try {
       0,
     );
   });
+  await db.exec(
+    await readFile(
+      path.join(root, "supabase/migrations/007_president_view.sql"),
+      "utf8",
+    ),
+  );
+  await query("update public.profiles set role='president' where id=$1", [
+    ids.other,
+  ]);
+  await test("President endpoint rejects Member, Treasurer and anonymous callers", async () => {
+    for (const user of [ids.member, ids.fiscal, null]) {
+      await rejected(
+        () => rpc(user, "ml_president_overview"),
+        /President access|required|Sign in/i,
+      );
+    }
+    await db.exec("begin; set local role anon;");
+    try {
+      await rejected(
+        () => query("select public.ml_president_overview()"),
+        /permission denied/,
+      );
+    } finally {
+      await db.exec("rollback");
+    }
+  });
+  await test("President overview returns accurate budgets and safe non-draft summaries", async () => {
+    const snapshot = await rpc(ids.other, "ml_president_overview");
+    const expected = await query(
+      "select count(*)::int n from public.claims where status<>'draft'",
+    );
+    assert.equal(snapshot.claim_count, expected[0].n);
+    assert.equal(snapshot.claims.length, Math.min(expected[0].n, 500));
+    for (const c of snapshot.claims) {
+      assert.notEqual(c.status, "draft");
+      assert.deepEqual(
+        Object.keys(c).sort(),
+        [
+          "id",
+          "claimant_name",
+          "activity_id",
+          "activity_name",
+          "amount",
+          "description",
+          "status",
+          "submitted_at",
+        ].sort(),
+      );
+    }
+    const totals = await query(
+      "select a.id,a.budget-coalesce(sum(c.amount) filter(where c.status in ('approved','paid')),0) remaining from public.activities a left join public.claims c on c.activity_id=a.id group by a.id",
+    );
+    for (const a of snapshot.activities)
+      assert.equal(
+        Number(a.remaining_budget),
+        Number(totals.find((t) => t.id === a.id).remaining),
+      );
+  });
+  await test("President does not inherit Treasurer writes or private record access", async () => {
+    await rejected(
+      () => rpc(ids.other, "ml_review_claim", [legacyClaim, true, null]),
+      /Treasurer access/,
+    );
+    const foreignClaims = await as(ids.other, () =>
+      query("select * from public.claims where claimant_id<>$1", [ids.other]),
+    );
+    assert.equal(foreignClaims.length, 0);
+    const foreignPayouts = await as(ids.other, () =>
+      query("select * from public.payout_details where user_id<>$1", [
+        ids.other,
+      ]),
+    );
+    assert.equal(foreignPayouts.length, 0);
+    const draft = await newClaim(ids.other, legacyActivity, "2");
+    assert.ok(draft);
+    await rpc(ids.other, "ml_delete_claim", [draft]);
+  });
   console.log(
     `\n${count} database workflow/security checks passed. No remote Supabase project was used.`,
   );

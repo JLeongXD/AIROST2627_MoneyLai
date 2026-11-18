@@ -173,3 +173,7 @@ export async function signedFile(bucket: string, path: string) {
   if (error) throw error;
   return data.signedUrl;
 }
+
+export async function getPresidentOverview() {
+  return rpc<import("./types").PresidentSnapshot>("ml_president_overview");
+}

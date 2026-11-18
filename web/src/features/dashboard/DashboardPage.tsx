@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import {
   PageHeader,
@@ -14,15 +16,21 @@ import { listActivities, listClaims } from "@/lib/api";
 import { money } from "@/lib/domain";
 export default function DashboardPage() {
   const { user, profile } = useAuth();
+  const router = useRouter();
+  const president = profile?.role === "president";
+  useEffect(() => {
+    if (president) router.replace("/president");
+  }, [president, router]);
   const treasurer = profile?.role === "treasurer";
   const { data, error, loading } = useLoad(async () => {
+    if (president) return { activities: [], claims: [] };
     const [activities, claims] = await Promise.all([
       listActivities(),
       listClaims(treasurer ? undefined : user!.id),
     ]);
     return { activities, claims };
-  }, [user?.id, treasurer]);
-  if (loading) return <Loading />;
+  }, [user?.id, treasurer, president]);
+  if (president || loading) return <Loading />;
   if (error) return <Notice tone="error">{error}</Notice>;
   if (!data) return null;
   const { claims, activities } = data;

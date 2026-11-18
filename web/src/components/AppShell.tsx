@@ -43,6 +43,11 @@ export default function AppShell({ children }: { children: ReactNode }) {
         {user && <button onClick={signOut}>Sign out</button>}
       </main>
     );
+  const roleLabel = {
+    member: "Club member",
+    treasurer: "Treasurer",
+    president: "President",
+  }[profile.role];
   const links = [
     { href: "/dashboard", label: "Overview", icon: "◈" },
     { href: "/claims", label: "My claims", icon: "▤" },
@@ -91,9 +96,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
           </span>
           <div>
             <strong>{profile.display_name}</strong>
-            <small>
-              {profile.role === "treasurer" ? "Treasurer" : "Club member"}
-            </small>
+            <small>{roleLabel}</small>
           </div>
           <button
             className="icon-button"
@@ -109,11 +112,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
       <div className="workspace">
         <header className="topbar">
           <span className="workspace-label">MoneyLai workspace</span>
-          <span className="role-tag">
-            {profile.role === "treasurer"
-              ? "Treasurer access"
-              : "Member access"}
-          </span>
+          <span className="role-tag">{`${roleLabel} access`}</span>
         </header>
         {message && (
           <p className="notice error" role="alert">

@@ -144,7 +144,11 @@ function ProfileForm({ payout }: { payout: Payout | null }) {
           time.
         </p>
         <span className="role-tag">
-          {profile?.role === "treasurer" ? "Treasurer" : "Member"}
+          {profile?.role === "president"
+            ? "President"
+            : profile?.role === "treasurer"
+              ? "Treasurer"
+              : "Member"}
         </span>
       </aside>
     </div>
