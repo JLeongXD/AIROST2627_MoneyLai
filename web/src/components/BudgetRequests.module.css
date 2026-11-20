@@ -1,0 +1,61 @@
+.section {
+  margin: 24px 0;
+  min-width: 0;
+  font-size: 16px;
+}
+.filter {
+  display: block;
+  max-width: 280px;
+  font-size: 15px;
+  font-weight: 600;
+  margin: 20px 0;
+}
+.filter select {
+  margin-top: 8px;
+  font-size: 16px;
+}
+.list {
+  display: grid;
+  gap: 16px;
+}
+.card {
+  padding: 20px;
+  border: 1px solid #dfe7e4;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.card p {
+  margin-bottom: 10px;
+}
+.heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+}
+.heading h3 {
+  font-size: 18px;
+}
+.meta {
+  color: #526b61;
+  font-size: 14px;
+}
+.amount {
+  font-size: 18px;
+}
+.decision {
+  padding: 22px;
+  margin: 20px 0;
+  border: 2px solid #699c83;
+  border-radius: 12px;
+  background: #f1f7f2;
+}
+@media (max-width: 600px) {
+  .heading {
+    flex-wrap: wrap;
+  }
+  .card,
+  .decision {
+    padding: 16px;
+  }
+}

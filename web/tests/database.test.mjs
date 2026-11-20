@@ -727,6 +727,291 @@ try {
     assert.ok(draft);
     await rpc(ids.other, "ml_delete_claim", [draft]);
   });
+  await db.exec(
+    await readFile(
+      path.join(root, "supabase/migrations/008_budget_approval.sql"),
+      "utf8",
+    ),
+  );
+  let proposal;
+  let fundedActivity;
+  await test("Only Treasurer can propose budgets; private requests reject Member access", async () => {
+    for (const who of [ids.member, ids.other])
+      await rejected(
+        () =>
+          rpc(who, "ml_save_activity", [
+            null,
+            "New event",
+            "",
+            "500",
+            null,
+            "Materials allocation",
+          ]),
+        /Treasurer/,
+      );
+    await rejected(
+      () => rpc(ids.member, "ml_list_budget_requests"),
+      /access required/,
+    );
+    await rejected(
+      () => as(ids.fiscal, () => query("select * from public.budget_requests")),
+      /permission denied/,
+    );
+    await rejected(
+      () =>
+        as(ids.fiscal, () =>
+          query("update public.activities set budget=99999"),
+        ),
+      /permission denied/,
+    );
+    proposal = await rpc(ids.fiscal, "ml_save_activity", [
+      null,
+      "Approval event",
+      "Requested event",
+      "500",
+      null,
+      "Materials allocation",
+    ]);
+    assert.equal(
+      (
+        await query(
+          "select * from public.activities where name='Approval event'",
+        )
+      ).length,
+      0,
+    );
+    assert.ok(
+      (await rpc(ids.other, "ml_list_budget_requests")).some(
+        (r) => r.id === proposal,
+      ),
+    );
+  });
+  await test("President approval creates an activity once and records the decision", async () => {
+    await rejected(
+      () => rpc(ids.fiscal, "ml_decide_budget", [proposal, true, ""]),
+      /President/,
+    );
+    await rejected(
+      () => rpc(ids.member, "ml_decide_budget", [proposal, true, ""]),
+      /President/,
+    );
+    await rpc(ids.other, "ml_decide_budget", [
+      proposal,
+      true,
+      "Approved for event",
+    ]);
+    const r = (
+      await query("select * from public.budget_requests where id=$1", [
+        proposal,
+      ])
+    )[0];
+    fundedActivity = r.activity_id;
+    assert.equal(r.status, "approved");
+    assert.equal(r.reviewed_by, ids.other);
+    assert.equal(
+      Number(
+        (
+          await query("select budget from public.activities where id=$1", [
+            fundedActivity,
+          ])
+        )[0].budget,
+      ),
+      500,
+    );
+    await rejected(
+      () => rpc(ids.other, "ml_decide_budget", [proposal, true, ""]),
+      /no longer pending/,
+    );
+    assert.equal(
+      (
+        await query(
+          "select * from public.activity_events where activity_id=$1",
+          [fundedActivity],
+        )
+      ).length,
+      1,
+    );
+    const draft = await newClaim(ids.member, fundedActivity, "5");
+    await rpc(ids.member, "ml_delete_claim", [draft]);
+  });
+  await test("Budget updates remain pending, prevent duplicates, and apply approved totals", async () => {
+    const r = await rpc(ids.fiscal, "ml_save_activity", [
+      fundedActivity,
+      "Approval event",
+      "Requested event",
+      "700",
+      null,
+      "Additional materials",
+    ]);
+    assert.equal(
+      Number(
+        (
+          await query("select budget from public.activities where id=$1", [
+            fundedActivity,
+          ])
+        )[0].budget,
+      ),
+      500,
+    );
+    await rejected(
+      () =>
+        rpc(ids.second, "ml_save_activity", [
+          fundedActivity,
+          "Approval event",
+          "",
+          "800",
+          null,
+          "Another request",
+        ]),
+      /already has a pending/,
+    );
+    await rpc(ids.other, "ml_decide_budget", [
+      r,
+      true,
+      "Additional funding approved",
+    ]);
+    assert.equal(
+      Number(
+        (
+          await query("select budget from public.activities where id=$1", [
+            fundedActivity,
+          ])
+        )[0].budget,
+      ),
+      700,
+    );
+  });
+  await test("Rejections require reasons and keep budgets and request history", async () => {
+    const r = await rpc(ids.fiscal, "ml_save_activity", [
+      fundedActivity,
+      "Approval event",
+      "",
+      "900",
+      null,
+      "More resources",
+    ]);
+    await rejected(
+      () => rpc(ids.other, "ml_decide_budget", [r, false, ""]),
+      /Rejection requires/,
+    );
+    await rpc(ids.other, "ml_decide_budget", [r, false, "Allocation too high"]);
+    assert.equal(
+      Number(
+        (
+          await query("select budget from public.activities where id=$1", [
+            fundedActivity,
+          ])
+        )[0].budget,
+      ),
+      700,
+    );
+    assert.equal(
+      (
+        await query(
+          "select review_note from public.budget_requests where id=$1",
+          [r],
+        )
+      )[0].review_note,
+      "Allocation too high",
+    );
+  });
+  await test("Only requesting Treasurer can cancel; cancelled requests cannot be approved", async () => {
+    const r = await rpc(ids.fiscal, "ml_save_activity", [
+      fundedActivity,
+      "Approval event",
+      "",
+      "800",
+      null,
+      "Temporary request",
+    ]);
+    await rejected(
+      () => rpc(ids.second, "ml_cancel_budget", [r]),
+      /own pending/,
+    );
+    await rejected(() => rpc(ids.other, "ml_cancel_budget", [r]), /Treasurer/);
+    await rpc(ids.fiscal, "ml_cancel_budget", [r]);
+    await rejected(
+      () => rpc(ids.other, "ml_decide_budget", [r, true, ""]),
+      /no longer pending/,
+    );
+    const replacement = await rpc(ids.fiscal, "ml_save_activity", [
+      fundedActivity,
+      "Approval event",
+      "",
+      "800",
+      null,
+      "Replacement request",
+    ]);
+    await rpc(ids.fiscal, "ml_cancel_budget", [replacement]);
+  });
+  await test("Self review stays forbidden even after requester becomes President", async () => {
+    const r = await rpc(ids.second, "ml_save_activity", [
+      null,
+      "Self review event",
+      "",
+      "100",
+      null,
+      "Test self review",
+    ]);
+    await query("update public.profiles set role='president' where id=$1", [
+      ids.second,
+    ]);
+    await rejected(
+      () => rpc(ids.second, "ml_decide_budget", [r, true, ""]),
+      /own request/,
+    );
+    await rpc(ids.other, "ml_decide_budget", [
+      r,
+      false,
+      "Use another proposal",
+    ]);
+    await query("update public.profiles set role='treasurer' where id=$1", [
+      ids.second,
+    ]);
+  });
+  await test("Budget approval rechecks expenditure committed after request submission", async () => {
+    const r = await rpc(ids.fiscal, "ml_save_activity", [
+      fundedActivity,
+      "Approval event",
+      "",
+      "100",
+      null,
+      "Reduced attendance",
+    ]);
+    const c = await newClaim(ids.member, fundedActivity, "150");
+    await receipt(ids.member, c);
+    await rpc(ids.member, "ml_submit_claim", [c]);
+    await rpc(ids.fiscal, "ml_review_claim", [c, "approved", ""]);
+    await rejected(
+      () => rpc(ids.other, "ml_decide_budget", [r, true, ""]),
+      /lower than approved/,
+    );
+    assert.equal(
+      (
+        await query("select status from public.budget_requests where id=$1", [
+          r,
+        ])
+      )[0].status,
+      "pending",
+    );
+    await rpc(ids.other, "ml_decide_budget", [
+      r,
+      false,
+      "Existing approved expenditure exceeds this proposal",
+    ]);
+    await rejected(
+      () =>
+        rpc(ids.fiscal, "ml_save_activity", [
+          fundedActivity,
+          "Approval event",
+          "",
+          "100",
+          null,
+          "Try again",
+        ]),
+      /lower than approved/,
+    );
+  });
   console.log(
     `\n${count} database workflow/security checks passed. No remote Supabase project was used.`,
   );

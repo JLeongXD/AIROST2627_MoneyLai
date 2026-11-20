@@ -177,3 +177,7 @@ export async function signedFile(bucket: string, path: string) {
 export async function getPresidentOverview() {
   return rpc<import("./types").PresidentSnapshot>("ml_president_overview");
 }
+
+export async function listBudgetRequests() {
+  return rpc<import("./types").BudgetRequest[]>("ml_list_budget_requests");
+}

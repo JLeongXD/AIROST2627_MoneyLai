@@ -89,3 +89,21 @@ export type PresidentSnapshot = {
   claims: PresidentClaim[];
   claim_count: number;
 };
+
+export type BudgetRequest = {
+  id: string;
+  activity_id: string | null;
+  name: string;
+  description: string | null;
+  event_date: string | null;
+  base_budget: Money | null;
+  proposed_budget: Money;
+  reason: string;
+  requested_by: string;
+  requester_name: string;
+  reviewer_name: string | null;
+  status: "pending" | "approved" | "rejected" | "cancelled";
+  review_note: string | null;
+  created_at: string;
+  reviewed_at: string | null;
+};

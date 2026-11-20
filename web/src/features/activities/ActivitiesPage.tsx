@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import BudgetRequests from "@/components/BudgetRequests";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import {
@@ -17,6 +18,7 @@ export default function ActivitiesPage() {
   const { profile } = useAuth();
   const fiscal = profile?.role === "treasurer";
   const { data, error, loading, reload } = useLoad(listActivities);
+  const [requestVersion, setRequestVersion] = useState(0);
   const [filter, setFilter] = useState("active");
   const [search, setSearch] = useState("");
   const [editor, setEditor] = useState<Activity | "new" | null>(null);
@@ -73,10 +75,16 @@ export default function ActivitiesPage() {
           onCancel={() => setEditor(null)}
           onDone={() => {
             setEditor(null);
-            setMessage("Activity saved.");
+            setMessage(
+              "Request submitted. The activity and budget will take effect after President approval.",
+            );
+            setRequestVersion((v) => v + 1);
             reload();
           }}
         />
+      )}
+      {(fiscal || profile?.role === "president") && (
+        <BudgetRequests key={requestVersion} onChanged={reload} />
       )}
       <div className="filter-bar">
         <input
@@ -175,7 +183,7 @@ export default function ActivitiesPage() {
                         onClick={() => setEditor(a)}
                       >
                         {a.status === "active"
-                          ? "Edit & history"
+                          ? "Request update & history"
                           : "View history"}
                       </button>
                       <button
@@ -203,7 +211,7 @@ export default function ActivitiesPage() {
             title="No activities here yet"
             description={
               fiscal
-                ? "Create an activity and set its budget to get started."
+                ? "Propose an activity budget for President approval to get started."
                 : "Your treasurer will add activities here."
             }
           />
@@ -239,8 +247,10 @@ function ActivityForm({
       setError(issue);
       return;
     }
-    if (!name.trim() || (activity && reason.trim().length < 3)) {
-      setError("Enter an activity name and, for updates, a reason.");
+    if (!name.trim() || reason.trim().length < 3) {
+      setError(
+        "Enter an activity name and a request reason of at least 3 characters.",
+      );
       return;
     }
     setBusy(true);
@@ -264,12 +274,18 @@ function ActivityForm({
   return (
     <section className="panel activity-editor">
       <div className="section-heading">
-        <h2>{activity ? "Activity settings" : "Create an activity"}</h2>
+        <h2>
+          {activity ? "Request activity update" : "Propose a new activity"}
+        </h2>
         <button className="text-button" onClick={onCancel}>
           Close editor
         </button>
       </div>
       {error && <Notice tone="error">{error}</Notice>}
+      <Notice>
+        President approval is required. Enter the proposed total budget.
+        Existing budgets remain unchanged while a request is pending.
+      </Notice>
       {!closed && (
         <form onSubmit={save} noValidate>
           <fieldset disabled={busy}>
@@ -282,7 +298,7 @@ function ActivityForm({
                   onChange={(e) => setName(e.target.value)}
                 />
               </Field>
-              <Field label="Budget (RM)" id="budget">
+              <Field label="Proposed total budget (RM)" id="budget">
                 <input
                   id="budget"
                   inputMode="decimal"
@@ -309,8 +325,8 @@ function ActivityForm({
                   onChange={(e) => setDate(e.target.value)}
                 />
               </Field>
-              {activity && (
-                <Field label="Update reason" id="budget-reason">
+              {
+                <Field label="Request reason" id="budget-reason">
                   <input
                     id="budget-reason"
                     maxLength={1000}
@@ -318,10 +334,10 @@ function ActivityForm({
                     onChange={(e) => setReason(e.target.value)}
                   />
                 </Field>
-              )}
+              }
             </div>
             <button className="button primary">
-              {busy ? "Saving…" : "Save activity"}
+              {busy ? "Submitting…" : "Submit for President approval"}
             </button>
           </fieldset>
         </form>

@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import BudgetRequests from "@/components/BudgetRequests";
 import { useAuth } from "@/components/AuthProvider";
 import { Loading, Notice, PageHeader, StatCard } from "@/components/UI";
 import { getPresidentOverview } from "@/lib/api";
@@ -65,9 +66,10 @@ export default function PresidentPage() {
         }
       />
       <Notice>
-        Read-only oversight. Treasurer handles claim review and payments.
-        Allocated budgets do not represent your club’s bank balance.
+        Approve activity budgets here. Treasurer handles claim review and
+        payments. Allocated budgets do not represent your club’s bank balance.
       </Notice>
+      <BudgetRequests onChanged={state.reload} />
       <div className="stats-grid">
         <StatCard
           label="Total activity budgets"
