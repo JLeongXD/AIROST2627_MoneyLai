@@ -26,6 +26,7 @@ import {
 } from "@/lib/api";
 import { money, dateTime, errorMessage, fileError, today } from "@/lib/domain";
 import type { Claim, Payout } from "@/lib/types";
+import AIClaimCheck from "@/components/AIClaimCheck";
 
 export default function ClaimDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -97,6 +98,11 @@ export default function ClaimDetailPage() {
       />
       {error && <Notice tone="error">{error}</Notice>}
       {message && <Notice tone="success">{message}</Notice>}
+      <AIClaimCheck
+        claim={claim}
+        attachments={attachments}
+        onChanged={state.reload}
+      />
       <div className="detail-grid">
         <div>
           <section className="panel">

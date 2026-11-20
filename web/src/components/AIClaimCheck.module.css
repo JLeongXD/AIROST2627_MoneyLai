@@ -1,0 +1,45 @@
+.panel {
+  margin-top: 24px;
+  font-size: 16px;
+}
+.report {
+  padding: 20px;
+  margin: 18px 0;
+  background: #f3f7f3;
+  border: 1px solid #dce7dc;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+.report dt {
+  font-weight: 700;
+  margin-top: 12px;
+}
+.report dd {
+  margin: 4px 0 12px;
+}
+.receipt {
+  border-top: 1px solid #dce7dc;
+  padding-top: 14px;
+  margin-top: 16px;
+}
+.receipt p {
+  margin: 6px 0;
+  font-size: 14px;
+}
+.consent {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  margin: 20px 0;
+  font-size: 14px;
+}
+.consent input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  margin-top: 4px;
+}
+.panel small {
+  font-size: 13px;
+  color: #526b61;
+}
