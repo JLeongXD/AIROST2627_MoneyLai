@@ -38,7 +38,7 @@ export function WorkspaceFrame({
     { href: "/profile", label: "Profile", icon: "user" },
   ];
   return (
-    <div className="hybrid-app">
+    <div className="hybrid-app" data-role={profile.role}>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>

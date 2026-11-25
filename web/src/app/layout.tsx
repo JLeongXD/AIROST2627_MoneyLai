@@ -4,6 +4,7 @@ import { AuthProvider } from "@/components/AuthProvider";
 import "./globals.css";
 import "./hybrid.css";
 import "./hybrid-shell.css";
+import "./student-readability.css";
 export const metadata: Metadata = {
   title: { default: "MoneyLai", template: "%s · MoneyLai" },
   description: "Club budgets, expense claims and reimbursements in one place.",
