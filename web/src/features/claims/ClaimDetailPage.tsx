@@ -675,7 +675,6 @@ function PaymentForm({
   const [proof, setProof] = useState<File | null>(null);
   const [proofPath, setProofPath] = useState("");
   const [confirmed, setConfirmed] = useState(false);
-  const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false);
   const notify = useFeedback();
   const [error, setError] = useOperationError("Payment record could not be saved");
@@ -736,18 +735,6 @@ function PaymentForm({
           <div className="payout-card">
             <strong>{payout.recipient_name}</strong>
             <span>{payout.provider_name}</span>
-            <span>
-              {reveal
-                ? payout.account_number
-                : `•••• ${payout.account_number.slice(-4)}`}
-            </span>
-            <button
-              type="button"
-              className="text-button"
-              onClick={() => setReveal((v) => !v)}
-            >
-              {reveal ? "Hide account" : "Show account for transfer"}
-            </button>
           </div>
           <form onSubmit={record} noValidate>
             <fieldset disabled={busy}>
