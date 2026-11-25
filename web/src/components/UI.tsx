@@ -50,6 +50,14 @@ export function Loading() {
     </div>
   );
 }
+export function NextStep({ title, description, href, label, onAction }: {
+  title: string; description: string; href: string; label: string; onAction?: () => void;
+}) {
+  return <section className="next-step" aria-label="Your next step">
+    <div><strong>{title}</strong><p>{description}</p></div>
+    {onAction ? <button type="button" className="button secondary" onClick={onAction}>{label} →</button> : <Link className="button secondary" href={href}>{label} →</Link>}
+  </section>;
+}
 export function EmptyState({
   title,
   description,

@@ -6,6 +6,7 @@ import { getPayout, rpc } from "@/lib/api";
 import { useLoad } from "@/lib/useLoad";
 import { errorMessage } from "@/lib/domain";
 import type { Payout } from "@/lib/types";
+import { useFeedback, useOperationError } from "@/components/FeedbackProvider";
 export default function ProfilePage() {
   const { user } = useAuth();
   const state = useLoad(() => getPayout(user!.id), [user?.id]);
@@ -34,10 +35,12 @@ function ProfileForm({ payout }: { payout: Payout | null }) {
   const [account, setAccount] = useState(payout?.account_number ?? "");
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useOperationError("Profile could not be saved");
+  const notify = useFeedback();
   const [message, setMessage] = useState("");
   async function save(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError("");
     setMessage("");
     if (!name.trim()) {
@@ -54,6 +57,7 @@ function ProfileForm({ payout }: { payout: Payout | null }) {
       return;
     }
     setBusy(true);
+    notify({ title: "Saving profile…", tone: "progress" });
     try {
       await rpc("ml_save_profile", {
         p_display_name: name,
@@ -63,6 +67,7 @@ function ProfileForm({ payout }: { payout: Payout | null }) {
       });
       refreshProfile();
       setMessage("Profile and payout details saved.");
+      notify({ title: "Profile saved", description: recipient.trim() && provider.trim() && account.trim() ? "Your payout details are ready. Return to your draft to review and submit it." : "Your name is saved. Add complete payout details here before submitting a claim.", href: "/claims", label: "View my claims" });
     } catch (e) {
       setError(errorMessage(e));
     } finally {

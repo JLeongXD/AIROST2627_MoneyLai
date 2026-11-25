@@ -14,6 +14,7 @@ import { useLoad } from "@/lib/useLoad";
 import { getActivityEvents, listActivities, rpc } from "@/lib/api";
 import { amountError, errorMessage, money, dateTime } from "@/lib/domain";
 import type { Activity } from "@/lib/types";
+import { useFeedback, useOperationError } from "@/components/FeedbackProvider";
 export default function ActivitiesPage() {
   const { profile } = useAuth();
   const fiscal = profile?.role === "treasurer";
@@ -234,7 +235,8 @@ function ActivityForm({
   const [date, setDate] = useState(activity?.event_date ?? "");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useOperationError("Budget proposal could not be saved");
+  const notify = useFeedback();
   const history = useLoad(
     () => (activity ? getActivityEvents(activity.id) : Promise.resolve([])),
     [activity?.id],
@@ -242,6 +244,7 @@ function ActivityForm({
   const closed = activity?.status === "closed";
   async function save(e: FormEvent) {
     e.preventDefault();
+    if (busy) return;
     const issue = amountError(budget, true);
     if (issue) {
       setError(issue);
@@ -254,6 +257,7 @@ function ActivityForm({
       return;
     }
     setBusy(true);
+    notify({ title: "Submitting budget proposal…", tone: "progress" });
     setError("");
     try {
       await rpc("ml_save_activity", {
@@ -264,6 +268,7 @@ function ActivityForm({
         p_event_date: date || null,
         p_reason: reason,
       });
+      notify({ title: "Budget proposal submitted", description: "Waiting for President approval. The activity and its budget take effect only after approval.", href: "/activities", label: "View request progress" });
       onDone();
     } catch (e) {
       setError(errorMessage(e));

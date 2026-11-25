@@ -8,9 +8,11 @@ import ClaimsTable from "@/components/ClaimsTable";
 import { listClaims, rpc } from "@/lib/api";
 import { useLoad } from "@/lib/useLoad";
 import { STATUS_LABELS, errorMessage } from "@/lib/domain";
-import type { ClaimStatus } from "@/lib/types";
+import { useFeedback } from "@/components/FeedbackProvider";
+import { feedbackFor } from "@/lib/workflow-feedback";
 export default function MyClaimsPage() {
   const { user } = useAuth();
+  const notify = useFeedback();
   const [view, setView] = useState("timeline");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -28,14 +30,17 @@ export default function MyClaimsPage() {
     )
       return;
     setBusy(id);
+    notify({ title: "Deleting draft…", tone: "progress" });
     setMessage("");
     setDeleteError("");
     try {
       await rpc("ml_delete_claim", { p_claim_id: id });
       setMessage("Draft deleted.");
+      notify(feedbackFor("deleted", id));
       reload();
     } catch (e) {
       setDeleteError(errorMessage(e));
+      notify({ title: "Draft could not be deleted", description: errorMessage(e), tone: "error" });
     } finally {
       setBusy(null);
     }

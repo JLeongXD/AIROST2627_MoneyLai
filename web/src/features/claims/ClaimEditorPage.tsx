@@ -14,6 +14,8 @@ import {
   today,
 } from "@/lib/domain";
 import type { Activity, Claim } from "@/lib/types";
+import { useFeedback, useOperationError } from "@/components/FeedbackProvider";
+import { feedbackFor } from "@/lib/workflow-feedback";
 
 export default function ClaimEditorPage({ edit = false }: { edit?: boolean }) {
   const params = useParams<{ id: string }>();
@@ -86,7 +88,8 @@ export function ClaimForm({
   );
   const [category, setCategory] = useState(claim?.category ?? "Materials");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useOperationError("Draft could not be saved");
+  const notify = useFeedback();
   const selected = activities.find((a) => a.id === activityId);
   async function save(e: FormEvent) {
     e.preventDefault();
@@ -98,6 +101,7 @@ export function ClaimForm({
         return;
       }
       setStep(2);
+      notify({ title: "Activity selected", description: "Next: enter the amount, purchase date and purpose of your expense." });
       return;
     }
     const amountIssue = amountError(amount);
@@ -116,6 +120,7 @@ export function ClaimForm({
       return;
     }
     setBusy(true);
+    notify({ title: "Saving draft…", tone: "progress" });
     try {
       const id = await rpc<string>("ml_save_claim", {
         p_claim_id: claim?.id ?? null,
@@ -125,6 +130,7 @@ export function ClaimForm({
         p_purchase_date: purchaseDate,
         p_category: category,
       });
+      notify(claim?.info_requested_at ? { title: "Draft changes saved", description: "Next: update any requested receipts and explain your changes in the clarification reply before resubmitting.", href: `/claims/${id}#clarifications`, label: "Reply to Treasurer" } : feedbackFor("saved", id));
       router.push(`/claims/${id}?flow=receipt`);
     } catch (e) {
       setError(errorMessage(e));

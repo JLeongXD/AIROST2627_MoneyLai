@@ -12,6 +12,7 @@ import {
   StatusBadge,
   Field,
   FileLink,
+  NextStep,
 } from "@/components/UI";
 import { useLoad } from "@/lib/useLoad";
 import {
@@ -31,6 +32,8 @@ import type { Claim, Payout } from "@/lib/types";
 import AIClaimCheck from "@/components/AIClaimCheck";
 import ClaimClarifications from "@/components/ClaimClarifications";
 import DuplicateReceipts from "@/components/DuplicateReceipts";
+import { useFeedback, useOperationError } from "@/components/FeedbackProvider";
+import { claimNextStep, feedbackFor, type ActionKind } from "@/lib/workflow-feedback";
 
 export default function ClaimDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -44,18 +47,22 @@ export function ClaimDetailWorkspace({
   onChanged?: () => void;
 }) {
   const [flowStep, setFlowStep] = useState(0);
+  const embedded = Boolean(onChanged);
   useEffect(() => {
-    setFlowStep(
-      !onChanged &&
-        new URLSearchParams(window.location.search).get("flow") === "receipt"
-        ? 3
-        : 0,
-    );
-  }, [id]);
+    let active = true;
+    void Promise.resolve().then(() => {
+      if (!active) return;
+      const flow = new URLSearchParams(window.location.search).get("flow");
+      setFlowStep(embedded ? 0 : flow === "receipt" ? 3 : flow === "review" ? 5 : 0);
+    });
+    return () => { active = false; };
+  }, [id, embedded]);
   const { user, profile } = useAuth();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const notify = useFeedback();
+  const [pendingAction, setPendingAction] = useState<ActionKind | null>(null);
+  const [error, setError] = useOperationError();
   const [message, setMessage] = useState("");
   const [reason, setReason] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -80,14 +87,17 @@ export function ClaimDetailWorkspace({
       activity: activities.find((a) => a.id === claim.activity_id),
     };
   }, [id]);
-  async function action(job: () => Promise<unknown>, success: string) {
+  async function action(job: () => Promise<unknown>, success: string, kind: ActionKind = "updated") {
     if (busy) return;
     setBusy(true);
+    setPendingAction(kind);
+    notify({ title: feedbackFor(kind, id).pending, tone: "progress" });
     setError("");
     setMessage("");
     try {
       await job();
       setMessage(success);
+      notify(feedbackFor(kind, id));
       setReason("");
       state.reload();
       onChanged?.();
@@ -95,6 +105,7 @@ export function ClaimDetailWorkspace({
       setError(errorMessage(e));
     } finally {
       setBusy(false);
+      setPendingAction(null);
     }
   }
   if (state.loading) return <Loading />;
@@ -105,8 +116,13 @@ export function ClaimDetailWorkspace({
   const fiscal = profile?.role === "treasurer";
   const canReview = fiscal && !owner;
   const flow = owner && claim.status === "draft" && flowStep > 0;
+  const next = claimNextStep(claim.status, owner, attachments.some((a) => a.kind === "receipt"), Boolean(payout), Boolean(claim.info_requested_at));
   return (
-    <div className={flow ? `claim-flow flow-${flowStep}` : "claim-document"}>
+    <div className={flow ? `claim-flow flow-${flowStep}` : "claim-document"} aria-busy={busy}>
+      <NextStep {...next} onAction={owner && claim.status === "draft" && !claim.info_requested_at && next.href.startsWith("#") ? () => {
+        setFlowStep(next.href === "#claim-review" ? 5 : 3);
+        requestAnimationFrame(() => document.getElementById(next.href.slice(1))?.scrollIntoView({ block: "start" }));
+      } : undefined} />
       {flow && (
         <>
           <ol className="wizard-steps" aria-label="Claim submission steps">
@@ -212,7 +228,7 @@ export function ClaimDetailWorkspace({
       </div>
       <div className="detail-grid">
         <div>
-          <section className="panel">
+          <section className="panel" id="claim-review">
             <div className="section-heading">
               <h2>Expense details</h2>
               <StatusBadge status={claim.status} />
@@ -255,10 +271,11 @@ export function ClaimDetailWorkspace({
                     action(
                       () => rpc("ml_submit_claim", { p_claim_id: id }),
                       "Claim submitted for review.",
+                      "submitted",
                     )
                   }
                 >
-                  Submit for review →
+                  {pendingAction === "submitted" ? "Submitting…" : "Submit for review →"}
                 </button>}
                 <button
                   className="text-button danger-text"
@@ -272,7 +289,7 @@ export function ClaimDetailWorkspace({
                       void action(async () => {
                         await rpc("ml_delete_claim", { p_claim_id: id });
                         router.replace("/claims");
-                      }, "Draft deleted.");
+                      }, "Draft deleted.", "deleted");
                   }}
                 >
                   Delete draft
@@ -288,6 +305,7 @@ export function ClaimDetailWorkspace({
                     void action(
                       () => rpc("ml_return_to_draft", { p_claim_id: id }),
                       "Claim returned to draft.",
+                      "withdrawn",
                     );
                 }}
               >
@@ -302,6 +320,7 @@ export function ClaimDetailWorkspace({
                   action(
                     () => rpc("ml_return_to_draft", { p_claim_id: id }),
                     "You can now revise and resubmit this claim.",
+                    "revised",
                   )
                 }
               >
@@ -353,6 +372,7 @@ export function ClaimDetailWorkspace({
                           action(
                             () => removeAttachment(a.id),
                             "Attachment removed.",
+                            "removed",
                           )
                         }
                       >
@@ -399,7 +419,7 @@ export function ClaimDetailWorkspace({
                     await uploadAttachment(id, file, fileKind);
                     setFile(null);
                     setFileVersion((n) => n + 1);
-                  }, "File uploaded.");
+                  }, "File uploaded.", "uploaded");
                 }}
               >
                 <p className="drop-hint">
@@ -496,7 +516,7 @@ export function ClaimDetailWorkspace({
               </Notice>
             )}
           {canReview && claim.status === "submitted" && (
-            <section className="panel">
+            <section className="panel" id="treasurer-review">
               <span className="eyebrow">TREASURER ACTION</span>
               <h2>Review this claim</h2>
               <p className="muted">
@@ -513,12 +533,12 @@ export function ClaimDetailWorkspace({
                 />
               </Field>
               <div className="stack-actions">
-                <button className="button secondary" disabled={busy || reason.trim().length < 3} onClick={() => action(() => rpc("ml_request_information", { p_claim_id: id, p_question: reason }), "Information requested. Waiting for the claimant’s reply.")}>Request missing information</button>
+                <button className="button secondary" disabled={busy || reason.trim().length < 3} onClick={() => action(() => rpc("ml_request_information", { p_claim_id: id, p_question: reason }), "Information requested. Waiting for the claimant’s reply.", "requested")}>{pendingAction === "requested" ? "Sending request…" : "Request missing information"}</button>
                 <button
                   className="button primary"
                   disabled={busy}
                   onClick={() => {
-                    if (confirm("Approve this claim and reserve its budget?"))
+                    if (confirm(`Approve ${money(claim.amount)} and reserve this activity’s budget? You must still complete the external transfer and record its payment proof.`))
                       void action(
                         () =>
                           rpc("ml_review_claim", {
@@ -527,16 +547,18 @@ export function ClaimDetailWorkspace({
                             p_reason: "",
                           }),
                         "Claim approved; awaiting payment.",
+                        "approved",
                       );
                   }}
                 >
-                  Approve claim
+                  {pendingAction === "approved" ? "Approving…" : "Approve claim"}
                 </button>
                 <button
                   className="button danger"
                   disabled={busy || reason.trim().length < 3}
-                  onClick={() =>
-                    action(
+                  onClick={() => {
+                    if (!confirm("Reject this claim with the reason you entered? The claimant will be able to revise and resubmit it.")) return;
+                    void action(
                       () =>
                         rpc("ml_review_claim", {
                           p_claim_id: id,
@@ -544,10 +566,11 @@ export function ClaimDetailWorkspace({
                           p_reason: reason,
                         }),
                       "Claim rejected with your reason.",
-                    )
-                  }
+                      "rejected",
+                    );
+                  }}
                 >
-                  Reject with reason
+                  {pendingAction === "rejected" ? "Rejecting…" : "Reject with reason"}
                 </button>
               </div>
             </section>
@@ -654,7 +677,8 @@ function PaymentForm({
   const [confirmed, setConfirmed] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const notify = useFeedback();
+  const [error, setError] = useOperationError("Payment record could not be saved");
   async function record(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
@@ -671,7 +695,9 @@ function PaymentForm({
       );
       return;
     }
+    if (!confirm(`Record ${money(claim.amount)} as reimbursed? Confirm the external transfer is complete. MoneyLai will save the evidence, not send money.`)) return;
     setBusy(true);
+    notify({ title: feedbackFor("paid", claim.id).pending, tone: "progress" });
     try {
       let path = proofPath;
       if (!path) {
@@ -684,6 +710,7 @@ function PaymentForm({
         p_reference: reference.trim(),
         p_proof_path: path,
       });
+      notify(feedbackFor("paid", claim.id));
       onDone();
     } catch (e) {
       setError(errorMessage(e));
@@ -692,7 +719,7 @@ function PaymentForm({
     }
   }
   return (
-    <section className="panel">
+    <section className="panel" id="record-payment" aria-busy={busy}>
       <span className="eyebrow">TREASURER ACTION</span>
       <h2>Record reimbursement</h2>
       <p className="muted">

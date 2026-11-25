@@ -7,6 +7,7 @@ import { useLoad } from "@/lib/useLoad";
 import { dateTime, money, errorMessage } from "@/lib/domain";
 import type { BudgetRequest } from "@/lib/types";
 import styles from "./BudgetRequests.module.css";
+import { useFeedback, useOperationError } from "./FeedbackProvider";
 
 export default function BudgetRequests({
   onChanged,
@@ -25,7 +26,8 @@ export default function BudgetRequests({
   const [decision, setDecision] = useState("approve");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useOperationError("Budget decision could not be saved");
+  const notify = useFeedback();
   const [message, setMessage] = useState("");
   if (!allowed) return null;
   const requests = state.data ?? [];
@@ -38,6 +40,7 @@ export default function BudgetRequests({
       return;
     }
     setBusy(true);
+    notify({ title: "Saving budget decision…", tone: "progress" });
     setError("");
     setMessage("");
     try {
@@ -50,6 +53,7 @@ export default function BudgetRequests({
           p_note: note,
         });
       setSelected(null);
+      notify({ title: decision === "approve" ? "Budget approved and applied" : decision === "reject" ? "Budget request rejected" : "Budget request cancelled", description: decision === "approve" ? "The activity budget is updated. Review the allocation in Activities." : "The existing activity budget is unchanged. The decision remains in request history.", href: "/activities", label: "View activities" });
       setNote("");
       setMessage(
         decision === "approve"

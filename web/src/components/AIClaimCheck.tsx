@@ -10,6 +10,7 @@ import styles from "./AIClaimCheck.module.css";
 import Link from "next/link";
 import { coachFindings } from "@/lib/ai/coach";
 import { useAuth } from "./AuthProvider";
+import { useFeedback, useOperationError } from "./FeedbackProvider";
 
 export default function AIClaimCheck({
   claim,
@@ -23,7 +24,8 @@ export default function AIClaimCheck({
   const [busy, setBusy] = useState(false);
   const { user } = useAuth();
   const [consent, setConsent] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useOperationError("AI check could not be completed");
+  const notify = useFeedback();
   const signature = checkSignature(claim, attachments);
   const state = useLoad(async () => {
     const { data, error } = await createClient()
@@ -49,6 +51,7 @@ export default function AIClaimCheck({
     if (busy || !consent) return;
     setBusy(true);
     setError("");
+    notify({ title: "Checking your claim…", description: "Reading the receipts and comparing the details. This may take a minute.", tone: "progress" });
     try {
       const response = await fetch(`/api/claims/${claim.id}/ai-check`, {
         method: "POST",
@@ -58,6 +61,7 @@ export default function AIClaimCheck({
       const data = await response.json();
       if (!response.ok)
         throw new Error(data.error || "Unable to complete AI check.");
+      notify({ title: "AI check completed", description: "Next: review the findings below. Correct any issues before submitting; Treasurer makes the final decision.", href: `/claims/${claim.id}#claim-ai-check`, label: "Review AI findings" });
       state.reload();
       onChanged();
     } catch (e) {
@@ -77,7 +81,7 @@ export default function AIClaimCheck({
     unable_to_verify: "Unable to verify",
   };
   return (
-    <section className={`panel ${styles.panel}`}>
+    <section className={`panel ${styles.panel}`} id="claim-ai-check" aria-busy={busy}>
       <span className="eyebrow">GEMINI ASSISTED REVIEW</span>
       <h2>Claim readiness coach</h2>
       <div className="ai-workspace-steps" aria-label="AI check steps">

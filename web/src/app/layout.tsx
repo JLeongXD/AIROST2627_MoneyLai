@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AuthProvider } from "@/components/AuthProvider";
+import { FeedbackProvider } from "@/components/FeedbackProvider";
 import "./globals.css";
 import "./hybrid.css";
 import "./hybrid-shell.css";
@@ -13,7 +14,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body>
-        <AuthProvider>{children}</AuthProvider>
+        <FeedbackProvider><AuthProvider>{children}</AuthProvider></FeedbackProvider>
       </body>
     </html>
   );
