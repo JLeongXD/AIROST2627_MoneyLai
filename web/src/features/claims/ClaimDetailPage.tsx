@@ -17,6 +17,7 @@ import {
 import { useLoad } from "@/lib/useLoad";
 import {
   getClaim,
+  getReceiptPlan,
   getAttachments,
   getEvents,
   getPayment,
@@ -30,6 +31,7 @@ import {
 import { claimCode, money, dateTime, errorMessage, fileError, today } from "@/lib/domain";
 import type { Claim, Payout } from "@/lib/types";
 import AIClaimCheck from "@/components/AIClaimCheck";
+import ReceiptAllocation from "@/components/ReceiptAllocation";
 import ClaimClarifications from "@/components/ClaimClarifications";
 import DuplicateReceipts from "@/components/DuplicateReceipts";
 import { useFeedback, useOperationError } from "@/components/FeedbackProvider";
@@ -70,13 +72,14 @@ export function ClaimDetailWorkspace({
   const [fileVersion, setFileVersion] = useState(0);
   const state = useLoad(async () => {
     const claim = await getClaim(id);
-    const [attachments, events, payment, payout, activities] =
+    const [attachments, events, payment, payout, activities, receiptPlan] =
       await Promise.all([
         getAttachments(id),
         getEvents(id),
         getPayment(id),
         getPayout(claim.claimant_id),
         listActivities(),
+        getReceiptPlan(id),
       ]);
     return {
       claim,
@@ -84,6 +87,7 @@ export function ClaimDetailWorkspace({
       events,
       payment,
       payout,
+      receiptPlan,
       activity: activities.find((a) => a.id === claim.activity_id),
     };
   }, [id]);
@@ -111,7 +115,7 @@ export function ClaimDetailWorkspace({
   if (state.loading) return <Loading />;
   if (state.error) return <Notice tone="error">{state.error}</Notice>;
   if (!state.data) return null;
-  const { claim, attachments, events, payment, payout, activity } = state.data;
+  const { claim, attachments, events, payment, payout, activity, receiptPlan } = state.data;
   const owner = claim.claimant_id === user?.id;
   const fiscal = profile?.role === "treasurer";
   const canReview = fiscal && !owner;
@@ -218,9 +222,11 @@ export function ClaimDetailWorkspace({
         </div>
         <Journey status={claim.status} />
       </section>
+      {receiptPlan && <ReceiptAllocation plan={receiptPlan} claimed={claim.amount} sourceValid={attachments.filter(a => a.kind === "receipt").length === 1 && attachments.some(a => a.id === receiptPlan.attachment_id)} canEdit={owner && claim.status === "draft"} />}
       <div className="ai-split">
         <ReceiptPreview attachments={attachments} />
         <AIClaimCheck
+          receiptPlan={receiptPlan}
           claim={claim}
           attachments={attachments}
           onChanged={state.reload}

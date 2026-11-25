@@ -4,7 +4,7 @@ export function coachFindings(report: CheckResult, claimedAmount: string) {
   const findings: { title: string; evidence: string; next: string; action: "edit" | "upload" | "review" }[] = [];
   if (report.amount_status !== "match") findings.push({
     title: report.amount_status === "mismatch" ? "Confirm the claim amount" : "Amount could not be verified",
-    evidence: `Claimed: RM ${claimedAmount}. Readable MYR receipt total: ${report.receipt_total === null ? "unknown" : `RM ${report.receipt_total}`}.`,
+    evidence: report.allocation ? `Claimed: RM ${claimedAmount}. Calculated from confirmed items and adjustments: RM ${report.allocation.expected_amount}. Difference: RM ${report.allocation.difference}.` : `Claimed: RM ${claimedAmount}. Readable MYR receipt total: ${report.receipt_total === null ? "unknown" : `RM ${report.receipt_total}`}.`,
     next: "Check the amount and eligible purchases. Correct the draft or attach missing receipts; do not change a correct claim just to match AI.",
     action: report.amount_status === "mismatch" ? "edit" : "upload",
   });

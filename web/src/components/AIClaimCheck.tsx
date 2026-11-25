@@ -9,6 +9,7 @@ import { dateTime, money } from "@/lib/domain";
 import styles from "./AIClaimCheck.module.css";
 import Link from "next/link";
 import { coachFindings } from "@/lib/ai/coach";
+import type { ReceiptPlan } from "@/lib/ai/receipt-allocation";
 import { useAuth } from "./AuthProvider";
 import { useFeedback, useOperationError } from "./FeedbackProvider";
 
@@ -16,17 +17,19 @@ export default function AIClaimCheck({
   claim,
   attachments,
   onChanged,
+  receiptPlan = null,
 }: {
   claim: Claim;
   attachments: Attachment[];
   onChanged: () => void;
+  receiptPlan?: ReceiptPlan | null;
 }) {
   const [busy, setBusy] = useState(false);
   const { user } = useAuth();
   const [consent, setConsent] = useState(false);
   const [error, setError] = useOperationError("AI check could not be completed");
   const notify = useFeedback();
-  const signature = checkSignature(claim, attachments);
+  const signature = checkSignature(claim, attachments, receiptPlan?.revision);
   const state = useLoad(async () => {
     const { data, error } = await createClient()
       .from("ai_claim_checks")
@@ -83,7 +86,7 @@ export default function AIClaimCheck({
   return (
     <section className={`panel ${styles.panel}`} id="claim-ai-check" aria-busy={busy}>
       <span className="eyebrow">GEMINI ASSISTED REVIEW</span>
-      <h2>Claim readiness coach</h2>
+      <h2>{claim.claimant_id === user?.id ? "Claim readiness coach" : "Receipt & claim cross-check"}</h2>
       <div className="ai-workspace-steps" aria-label="AI check steps">
         <span
           className={
@@ -151,6 +154,7 @@ export default function AIClaimCheck({
               {report.receipt_total !== null
                 ? ` · Extracted total ${money(report.receipt_total)}`
                 : ""}
+              {report.allocation && <p>Item-based expected amount {money(report.allocation.expected_amount)} · claimed {money(report.allocation.claimed_amount)} · difference {money(report.allocation.difference)}. Full receipt total and claim amount may legitimately differ.</p>}
             </dd>
             <dt>Date</dt>
             <dd>{label[report.date_status]}</dd>

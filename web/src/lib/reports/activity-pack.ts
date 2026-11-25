@@ -5,6 +5,7 @@ import { PDFDocument, StandardFonts, rgb, type PDFPage } from "pdf-lib";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import type { Activity, Money } from "../types";
+import type { ReceiptPlan } from "../ai/receipt-allocation";
 
 type ExportClaim = {
   id: string; code: string; claimant_name: string; amount: Money; description: string;
@@ -20,6 +21,8 @@ export type ActivityExportSnapshot = {
   generated_at: string; scope: "treasurer_evidence" | "president_summary"; activity: Activity;
   claims: ExportClaim[]; attachments: ExportAttachment[]; payments: ExportPayment[]; events: ExportEvent[];
   activity_events: { old_budget: Money | null; new_budget: Money; note: string; created_at: string; actor: string }[];
+  receipt_plans?: ReceiptPlan[];
+  receipt_plan_history?: { claim_id: string; revision: number; created_at: string; actor: string; record: ReceiptPlan }[];
 };
 type Evidence = {
   claimId: string; claimCode: string; name: string; kind: string; bucket: string; source: string;
@@ -46,6 +49,8 @@ export async function buildActivityPack(
   const payments = fiscal ? snapshot.payments.filter(p => ids.has(p.claim_id)) : [];
   const events = fiscal ? snapshot.events.filter(e => ids.has(e.claim_id)) : [];
   const activityEvents = fiscal ? snapshot.activity_events : [];
+  const receiptPlans = fiscal ? (snapshot.receipt_plans ?? []).filter(p => ids.has(p.claim_id)) : [];
+  const receiptHistory = fiscal ? (snapshot.receipt_plan_history ?? []).filter(p => ids.has(p.claim_id)) : [];
   const evidence: Evidence[] = [];
   for (const claim of claims) {
     if (!fiscal) continue;
@@ -177,6 +182,22 @@ export async function buildActivityPack(
     if (!fiscal) continue;
     const payment = payments.find(p => p.claim_id === claim.id);
     if (payment) text(`Reimbursement: ${amount(payment.amount)} on ${payment.paid_on}\nTransfer reference: ${payment.reference}`);
+    const plan = receiptPlans.find(p => p.claim_id === claim.id);
+    if (plan) {
+      text(`Receipt item reconciliation / revision ${plan.revision}`, 14);
+      if (plan.source_valid === false) text("ATTENTION: original receipt was removed or additional receipts were added. The saved selection no longer matches the current evidence.");
+      text(`AI original total: ${plan.extraction.total === null ? "Unknown" : amount(plan.extraction.total)} | Confirmed receipt: ${amount(plan.calculation.receipt_total)}`);
+      text(`Calculated reimbursement: ${amount(plan.calculation.expected_amount)} | Claimed: ${amount(claim.amount)} | Difference: ${amount(Number(claim.amount) - Number(plan.calculation.expected_amount))}`);
+      text(`Selected ${amount(plan.calculation.selected_subtotal)} + tax ${amount(plan.calculation.tax)} - discount ${amount(plan.calculation.discount)} + rounding ${amount(plan.calculation.rounding)}. Excluded ${amount(plan.calculation.excluded_subtotal)}. Method: ${plan.calculation.method}`);
+      for (const row of plan.selection.items) {
+        const original = plan.extraction.items.find(i => i.id === row.id);
+        text(`${row.included ? "Included" : "Excluded"}: ${original?.description ?? row.id}\nAI line: ${original?.amount ?? "Unknown"} | Confirmed: ${amount(row.amount)} | Note: ${row.reason || "-"}`, 10);
+      }
+      if (plan.calculation.adjustment_reason) text(`Adjustment basis: ${plan.calculation.adjustment_reason}`);
+      if (plan.calculation.correction_reason) text(`Correction reason: ${plan.calculation.correction_reason}`);
+      for (const warning of plan.calculation.issues) text(`Review: ${warning}`, 10);
+      text(`Extraction model: ${plan.model} | Original SHA-256: ${plan.sha256}`, 9);
+    }
     for (const e of events.filter(e => e.claim_id === claim.id)) text(`${stamp(e.created_at)} | ${e.actor} | ${e.event_type}\n${e.note ?? "-"}`, 10);
     for (const item of evidence.filter(e => e.claimId === claim.id)) {
       if (item.bytes) {
@@ -255,6 +276,17 @@ export async function buildActivityPack(
     sheet("Audit history", ["Claim code", "Time (MYT)", "Actor", "Event", "Note"], events.map(e => [codes.get(e.claim_id)!, stamp(e.created_at), e.actor, e.event_type, e.note ?? ""]));
     sheet("Budget history", ["Time (MYT)", "Actor", "Old budget (RM)", "New budget (RM)", "Note"], activityEvents.map(e => [stamp(e.created_at), e.actor, e.old_budget === null ? "" : Number(e.old_budget), Number(e.new_budget), e.note]));
     sheet("Evidence completeness", ["Claim code", "Kind", "Original name", "Original in ZIP", "Included in PDF", "Issue"], evidence.map(e => [e.claimCode, e.kind, e.name, e.bytes ? e.archivePath : "No", e.embedded ? "Yes" : "No", e.issue ?? ""]));
+    if (receiptPlans.length) {
+      sheet("Receipt item selection", ["Claim code", "Revision", "Item", "AI line amount", "Confirmed line (RM)", "Included", "Purpose or exclusion reason"], receiptPlans.flatMap(p => p.selection.items.map(row => [codes.get(p.claim_id)!, p.revision, p.extraction.items.find(i => i.id === row.id)?.description ?? row.id,
+        p.extraction.items.find(i => i.id === row.id)?.amount ?? "Unknown", Number(row.amount), row.included ? "Yes" : "No", row.reason])));
+      sheet("Receipt calculations", ["Claim code", "AI original total", "Confirmed receipt", "Selected items", "Excluded items", "Tax", "Discount", "Rounding", "Expected", "Claimed", "Difference", "Method", "Adjustment basis", "Correction reason", "Review issues"], receiptPlans.map(p => {
+        const c = claims.find(c => c.id === p.claim_id)!;
+        return [codes.get(p.claim_id)!, p.extraction.total ?? "Unknown", Number(p.calculation.receipt_total), Number(p.calculation.selected_subtotal), Number(p.calculation.excluded_subtotal), Number(p.calculation.tax), Number(p.calculation.discount), Number(p.calculation.rounding), Number(p.calculation.expected_amount), Number(c.amount), Number(c.amount) - Number(p.calculation.expected_amount), p.calculation.method, p.calculation.adjustment_reason, p.calculation.correction_reason, [...p.calculation.issues, ...(p.source_valid === false ? ["Saved selection no longer matches the current receipt attachments."] : [])].join("; ")];
+      }));
+      sheet("Receipt selection history", ["Claim code", "Revision", "Saved (MYT)", "Actor", "Expected amount", "Selection and calculation preview"], receiptHistory.map(h => [codes.get(h.claim_id)!, h.revision, stamp(h.created_at), h.actor, h.record.calculation.expected_amount, JSON.stringify({ selection: h.record.selection, calculation: h.record.calculation }).slice(0, 30000) + "\nFull records: receipt-selections.json"]));
+      // Original extraction plus revision history accompanies the human-readable report.
+      zip.file("receipt-selections.json", JSON.stringify({ plans: receiptPlans, history: receiptHistory }, null, 2));
+    }
   }
   zip.file("activity-ledger.xlsx", await workbook.xlsx.writeBuffer());
   zip.file("manifest.json", JSON.stringify({

@@ -1,4 +1,5 @@
 import type { Attachment, Claim } from "../types";
+import type { ReceiptPlan } from "./receipt-allocation";
 
 export type ReceiptReading = {
   attachment_id: string;
@@ -21,6 +22,7 @@ export type CheckResult = Extraction & {
   date_status: "match" | "mismatch" | "unable_to_verify";
   receipt_total: string | null;
   needs_attention: boolean;
+  allocation?: { expected_amount: string; claimed_amount: string; difference: string; receipt_total: string; revision: number };
 };
 export type SavedCheck = {
   id: string;
@@ -39,8 +41,9 @@ export function checkSignature(
     "amount" | "purchase_date" | "category" | "description" | "activity_id"
   >,
   files: Attachment[],
+  receiptPlanRevision?: number,
 ) {
-  return JSON.stringify([
+  const inputs: unknown[] = [
     String(Number(c.amount).toFixed(2)),
     c.purchase_date,
     c.category,
@@ -56,7 +59,9 @@ export function checkSignature(
         a.mime_type,
         a.created_at,
       ]),
-  ]);
+  ];
+  if (receiptPlanRevision !== undefined) inputs.push(["receipt_plan_revision", receiptPlanRevision]);
+  return JSON.stringify(inputs);
 }
 export function cents(value: string): number | null {
   if (!/^\d{1,10}(\.\d{1,2})?$/.test(value)) return null;
@@ -120,6 +125,7 @@ export function compareClaim(
   extracted: Extraction,
   amount: string,
   date: string | null,
+  plan?: ReceiptPlan | null,
 ): CheckResult {
   const rs = extracted.receipts;
   const allAmounts =
@@ -132,10 +138,13 @@ export function compareClaim(
         cents(r.amount) !== null,
     );
   const sum = allAmounts ? rs.reduce((n, r) => n + cents(r.amount!)!, 0) : null;
+  const expected = plan ? cents(plan.calculation.expected_amount) : sum;
+  const warnings = [...extracted.warnings, ...(plan?.calculation.issues ?? [])];
+  if (plan && sum !== cents(plan.extraction.total ?? "")) warnings.push("Fresh AI reading differs from the saved original total. Compare the original and any user corrections before deciding.");
   const amount_status =
     sum === null
       ? "unable_to_verify"
-      : sum === cents(amount)
+      : expected === null ? "unable_to_verify" : expected === cents(amount)
         ? "match"
         : "mismatch";
   const allDates =
@@ -147,6 +156,7 @@ export function compareClaim(
       : "mismatch";
   return {
     ...extracted,
+    warnings: [...new Set(warnings)],
     amount_status,
     date_status,
     receipt_total: sum === null ? null : (sum / 100).toFixed(2),
@@ -154,6 +164,8 @@ export function compareClaim(
       amount_status !== "match" ||
       date_status !== "match" ||
       !extracted.purpose_clear ||
-      extracted.warnings.length > 0,
+      warnings.length > 0,
+    ...(plan && expected !== null ? { allocation: { expected_amount: plan.calculation.expected_amount, claimed_amount: amount,
+      difference: ((cents(amount)! - expected) / 100).toFixed(2), receipt_total: plan.calculation.receipt_total, revision: plan.revision } } : {}),
   };
 }

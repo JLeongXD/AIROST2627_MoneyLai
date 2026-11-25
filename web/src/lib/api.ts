@@ -1,5 +1,6 @@
 import { createClient } from "./supabase/client";
 import { fileError } from "./domain";
+import type { ReceiptPlan } from "./ai/receipt-allocation";
 import type {
   Activity,
   ActivityEvent,
@@ -56,6 +57,13 @@ export async function getClaim(id: string) {
   if (error) throw error;
   if (!data?.[0]) throw new Error("Claim not found or you do not have access.");
   return data[0];
+}
+export async function getReceiptPlan(id: string): Promise<ReceiptPlan | null> {
+  const { data, error } = await createClient().from("claim_receipt_plans").select("*").eq("claim_id", id).maybeSingle();
+  // Older deployments keep manual claims usable until migration 013 is applied.
+  if (error && ["42P01", "PGRST205"].includes(error.code)) return null;
+  if (error) throw error;
+  return data as ReceiptPlan | null;
 }
 export async function getAttachments(id: string) {
   const { data, error } = await createClient()

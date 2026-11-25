@@ -1,0 +1,2 @@
+.receiptStep:global(.claim-wizard) { grid-template-columns: minmax(0, 1fr); max-width: 1280px; }
+.receiptStep > aside { max-width: 100%; }

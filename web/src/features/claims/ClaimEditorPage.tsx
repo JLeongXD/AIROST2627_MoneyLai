@@ -5,7 +5,9 @@ import { useState, type FormEvent } from "react";
 import { PageHeader, Loading, Notice, Field } from "@/components/UI";
 import { useAuth } from "@/components/AuthProvider";
 import { useLoad } from "@/lib/useLoad";
-import { getClaim, listActivities, rpc } from "@/lib/api";
+import { getClaim, getReceiptPlan, listActivities, rpc } from "@/lib/api";
+import ReceiptAssistant from "@/components/ReceiptAssistant";
+import { calculateAllocation, type ReceiptPlan, type ReceiptAssistantValue } from "@/lib/ai/receipt-allocation";
 import {
   CATEGORIES,
   amountError,
@@ -16,19 +18,22 @@ import {
 import type { Activity, Claim } from "@/lib/types";
 import { useFeedback, useOperationError } from "@/components/FeedbackProvider";
 import { feedbackFor } from "@/lib/workflow-feedback";
+import styles from "./ClaimEditorPage.module.css";
 
 export default function ClaimEditorPage({ edit = false }: { edit?: boolean }) {
   const params = useParams<{ id: string }>();
   const id = edit ? params.id : undefined;
   const { user } = useAuth();
   const { data, error, loading } = useLoad(async () => {
-    const [activities, claim] = await Promise.all([
+    const [activities, claim, receiptPlan] = await Promise.all([
       listActivities(),
       id ? getClaim(id) : Promise.resolve(null),
+      id ? getReceiptPlan(id) : Promise.resolve(null),
     ]);
     return {
       activities,
       claim,
+      receiptPlan,
       initialActivity:
         new URLSearchParams(window.location.search).get("activity") ?? "",
     };
@@ -51,7 +56,7 @@ export default function ClaimEditorPage({ edit = false }: { edit?: boolean }) {
       <PageHeader
         eyebrow="START WITH THE DETAILS"
         title={edit ? "Edit your draft" : "New expense claim"}
-        description="Save the expense first, then add receipts and submit it for review."
+        description="Choose an activity, then read a receipt with AI or fill in the expense manually. Review everything before submitting."
         action={
           <Link href="/claims" className="button secondary">
             ← My claims
@@ -63,6 +68,7 @@ export default function ClaimEditorPage({ edit = false }: { edit?: boolean }) {
         claim={data.claim}
         activities={data.activities}
         initialActivity={data.initialActivity}
+        initialPlan={data.receiptPlan}
       />
     </>
   );
@@ -71,10 +77,12 @@ export function ClaimForm({
   claim,
   activities,
   initialActivity,
+  initialPlan = null,
 }: {
   claim: Claim | null;
   activities: Activity[];
   initialActivity: string;
+  initialPlan?: ReceiptPlan | null;
 }) {
   const router = useRouter();
   const [step, setStep] = useState(claim ? 2 : 1);
@@ -88,12 +96,16 @@ export function ClaimForm({
   );
   const [category, setCategory] = useState(claim?.category ?? "Materials");
   const [busy, setBusy] = useState(false);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [assisted, setAssisted] = useState<ReceiptAssistantValue | null>(initialPlan ? { sessionId: initialPlan.session_id, extraction: initialPlan.extraction, selection: initialPlan.selection } : null);
+  const [revision] = useState(initialPlan?.revision ?? 0);
+  const [recoveryId, setRecoveryId] = useState("");
   const [error, setError] = useOperationError("Draft could not be saved");
   const notify = useFeedback();
   const selected = activities.find((a) => a.id === activityId);
   async function save(e: FormEvent) {
     e.preventDefault();
-    if (busy) return;
+    if (busy || aiBusy) return;
     setError("");
     if (step === 1) {
       if (selected?.status !== "active") {
@@ -119,10 +131,22 @@ export function ClaimForm({
       setError("Enter a purchase date that is not in the future.");
       return;
     }
+    if (assisted) {
+      try { calculateAllocation(assisted.extraction, assisted.selection); }
+      catch (e) { setError(errorMessage(e)); return; }
+    }
     setBusy(true);
     notify({ title: "Saving draft…", tone: "progress" });
     try {
-      const id = await rpc<string>("ml_save_claim", {
+      let id: string;
+      if (assisted) {
+        const response = await fetch(`/api/receipt-drafts/${assisted.sessionId}/save`, { method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ claimId: claim?.id ?? null, revision, selection: assisted.selection,
+            fields: { amount: amount.trim(), description: description.trim(), purchase_date: purchaseDate, category } }), signal: AbortSignal.timeout(60000) });
+        const result = await response.json();
+        if (!response.ok) { if (result.claimId) setRecoveryId(result.claimId); throw new Error(result.error || "Could not save the assisted draft."); }
+        id = result.claimId;
+      } else id = await rpc<string>("ml_save_claim", {
         p_claim_id: claim?.id ?? null,
         p_activity_id: activityId,
         p_amount: amount.trim(),
@@ -130,8 +154,8 @@ export function ClaimForm({
         p_purchase_date: purchaseDate,
         p_category: category,
       });
-      notify(claim?.info_requested_at ? { title: "Draft changes saved", description: "Next: update any requested receipts and explain your changes in the clarification reply before resubmitting.", href: `/claims/${id}#clarifications`, label: "Reply to Treasurer" } : feedbackFor("saved", id));
-      router.push(`/claims/${id}?flow=receipt`);
+      notify(claim?.info_requested_at ? { title: "Draft changes saved", description: "Next: update any requested receipts and explain your changes in the clarification reply before resubmitting.", href: `/claims/${id}#clarifications`, label: "Reply to Treasurer" } : assisted ? { title: "Draft and original receipt saved", description: "Next: review the item reconciliation and expense details. You can run the AI cross-check before submitting.", href: `/claims/${id}#receipt-allocation`, label: "Review item calculation" } : feedbackFor("saved", id));
+      router.push(`/claims/${id}?flow=${assisted ? "review" : "receipt"}`);
     } catch (e) {
       setError(errorMessage(e));
       setBusy(false);
@@ -157,7 +181,7 @@ export function ClaimForm({
           </li>
         ))}
       </ol>
-      <div className="detail-grid claim-wizard">
+      <div className={`detail-grid claim-wizard ${step === 2 ? styles.receiptStep : ""}`}>
         <section className="panel">
           <span className="eyebrow">STEP {step} OF 5</span>
           <h2>
@@ -166,11 +190,12 @@ export function ClaimForm({
               : "A few details. A clearer claim."}
           </h2>
           <p className="muted">
-            Complete this step, then add your supporting receipt.
+            Use receipt assistance or complete the expense fields manually.
           </p>
           {error && <Notice tone="error">{error}</Notice>}
+          {recoveryId && <Notice>Your draft was retained. <Link href={`/claims/${recoveryId}`}>Open the saved draft →</Link> or retry saving here.</Notice>}
           <form onSubmit={save} noValidate>
-            <fieldset disabled={busy}>
+            <fieldset disabled={busy || aiBusy}>
               <div hidden={step !== 1}>
                 <Field
                   label="Activity"
@@ -184,7 +209,7 @@ export function ClaimForm({
                   <select
                     id="activity"
                     value={activityId}
-                    onChange={(e) => setActivityId(e.target.value)}
+                    onChange={(e) => { setActivityId(e.target.value); setAssisted(null); }}
                     disabled={Boolean(claim)}
                   >
                     <option value="">Choose an activity</option>
@@ -203,6 +228,9 @@ export function ClaimForm({
                 </Field>
               </div>
               <div hidden={step !== 2}>
+                {selected && <ReceiptAssistant key={selected.id} activityId={selected.id} initialPlan={initialPlan} onChange={setAssisted} onBusyChange={setAiBusy}
+                  onApply={fields => { setAmount(fields.amount); setPurchaseDate(fields.date ?? ""); setCategory(fields.category); setDescription(fields.description); requestAnimationFrame(() => document.getElementById("amount")?.scrollIntoView({ block: "center", behavior: "smooth" })); }} />}
+                <h3>Review the editable expense fields</h3>
                 <div className="form-grid">
                   <Field label="Amount (RM)" id="amount">
                     <input
@@ -271,7 +299,7 @@ export function ClaimForm({
                     ? "Saving…"
                     : step === 1
                       ? "Continue to details →"
-                      : "Save draft & continue →"}
+                    : assisted ? "Save draft & receipt →" : "Save draft & continue →"}
                 </button>
                 <Link
                   href={claim ? `/claims/${claim.id}` : "/claims"}
@@ -289,8 +317,8 @@ export function ClaimForm({
             <h2>A clear claim is a quicker claim.</h2>
             <ol>
               <li>Choose the right activity.</li>
-              <li>Enter the amount you actually paid.</li>
-              <li>Save, then upload your receipt.</li>
+              <li>Read a receipt or enter the expense manually.</li>
+              <li>Claim only the activity items and review adjustments.</li>
               <li>Check your payout details in Profile.</li>
             </ol>
             {selected && (

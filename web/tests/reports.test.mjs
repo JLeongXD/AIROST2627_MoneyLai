@@ -7,6 +7,7 @@ import ts from "typescript";
 import JSZip from "jszip";
 import ExcelJS from "exceljs";
 import { PDFDocument, PDFName } from "pdf-lib";
+import { reading, selection } from "./fixtures/receipt.mjs";
 const require = createRequire(import.meta.url);
 const source = await readFile(new URL("../src/lib/reports/activity-pack.ts", import.meta.url), "utf8");
 const compiled = new Module(path.resolve("src/lib/reports/activity-pack.ts"));
@@ -30,6 +31,9 @@ const snapshot = {
   payments: [{ claim_id: "claim-one", paid_on: "2026-11-25", reference: "PRIVATE_TRANSFER_REF", proof_path: "private/proof.png", amount: 120, recipient_snapshot: { account_number: "SECRET_ACCOUNT" } }],
   events: [{ claim_id: "claim-one", event_type: "approved", note: "PRIVATE_AUDIT_NOTE", actor: "Treasurer", created_at: "2026-11-25T11:00:00Z", snapshot: { secret: "SECRET_SNAPSHOT" } }],
   activity_events: [{ old_budget: 0, new_budget: 1000, note: "Approved budget", actor: "President", created_at: "2026-11-23T11:00:00Z" }],
+  receipt_plans: [{ claim_id: "claim-two", session_id: "session", revision: 1, original_name: "收据.png", sha256: "a".repeat(64), model: "test-model", extraction: reading, selection,
+    calculation: { receipt_total: "100.00", raw_receipt_total: "100.00", selected_subtotal: "80.00", excluded_subtotal: "20.00", tax: "0.00", discount: "0.00", rounding: "0.00", expected_amount: "80.00", method: "manual", adjustment_reason: "Tax included", correction_reason: "", issues: [] } }],
+  receipt_plan_history: [],
 };
 const receipt = await PDFDocument.create();
 receipt.addPage().drawText("RECEIPT RM120");
@@ -62,6 +66,9 @@ test("Treasurer ZIP links claims, includes originals and flags missing or damage
   assert.equal(typeof ledger.getCell("G3").value, "string"); // User input stays literal, not an Excel formula.
   assert.match(ledger.getCell("J2").value.hyperlink, /activity-report.pdf#page=\d+/);
   assert.ok(workbook.getWorksheet("Evidence completeness"));
+  assert.equal(workbook.getWorksheet("Receipt calculations").getCell("I2").value, 80);
+  assert.ok(workbook.getWorksheet("Receipt item selection"));
+  assert.equal(JSON.parse(await zip.file("receipt-selections.json").async("string")).plans[0].selection.items[2].included, false);
   assert.equal(JSON.stringify(workbook.model).includes("SECRET_ACCOUNT"), false);
   assert.equal(JSON.stringify(workbook.model).includes("SECRET_SNAPSHOT"), false);
   const pdf = await PDFDocument.load(await zip.file("activity-report.pdf").async("uint8array"));
@@ -76,6 +83,7 @@ test("President summary ignores accidentally supplied private evidence and never
   const pack = await buildActivityPack({ ...snapshot, scope: "president_summary" }, () => { throw new Error("Must not download"); });
   const zip = await JSZip.loadAsync(pack.bytes);
   assert.equal(Object.keys(zip.files).some(n => n.startsWith("evidence/")), false);
+  assert.equal(zip.file("receipt-selections.json"), null);
   const workbook = new ExcelJS.Workbook();
   await workbook.xlsx.load(await zip.file("activity-ledger.xlsx").async("nodebuffer"));
   assert.deepEqual(workbook.worksheets.map(s => s.name), ["Summary", "Claims"]);
