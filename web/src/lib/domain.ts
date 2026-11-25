@@ -14,7 +14,11 @@ export const STATUS_LABELS: Record<ClaimStatus, string> = {
   approved: "Awaiting payment",
   rejected: "Rejected",
   paid: "Reimbursed",
+  cancelled: "Cancelled (historical)",
 };
+export function claimCode(claim: { id: string; claim_number?: number | string }) {
+  return claim.claim_number == null ? `ML / ${claim.id.slice(0, 6).toUpperCase()}` : `ML-${String(claim.claim_number).padStart(6, "0")}`;
+}
 export function money(value: Money | null | undefined) {
   return new Intl.NumberFormat("en-MY", {
     style: "currency",

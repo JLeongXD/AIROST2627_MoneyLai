@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import BudgetRequests from "@/components/BudgetRequests";
+import ActivityExport from "@/components/ActivityExport";
 import { useState, type FormEvent } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import {
@@ -197,6 +198,9 @@ export default function ActivitiesPage() {
                     </>
                   )}
                 </div>
+                {(fiscal || profile?.role === "president") && (
+                  <ActivityExport activityId={a.id} summary={!fiscal} />
+                )}
               </article>
             ))}
         </div>

@@ -20,6 +20,7 @@ export function feedbackFor(kind: ActionKind, id: string) {
   return messages[kind];
 }
 export function claimNextStep(status: ClaimStatus, owner: boolean, hasReceipt: boolean, hasPayout: boolean, infoPending: boolean) {
+  if (status === "cancelled") return { title: "Historical cancelled claim", description: "This record is kept for traceability. No further action is required.", href: owner ? "/claims" : "/treasury", label: "Return to claims" };
   if (owner && infoPending) return { title: "Your response is needed", description: "Read the Treasurer’s question, update your draft and explain your changes before resubmitting.", href: "#clarifications", label: "Answer the information request" };
   if (owner && status === "draft" && !hasReceipt) return { title: "Next: upload a receipt", description: "Your draft is saved. Add at least one receipt showing the purchase date and total.", href: "#supporting-documents", label: "Upload receipt" };
   if (owner && status === "draft" && !hasPayout) return { title: "Next: add your payout details", description: "Complete your Profile so Treasurer can reimburse you, then return to submit this draft.", href: "/profile", label: "Complete my profile" };

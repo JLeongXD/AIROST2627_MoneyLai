@@ -27,7 +27,7 @@ import {
   removeAttachment,
   uploadFile,
 } from "@/lib/api";
-import { money, dateTime, errorMessage, fileError, today } from "@/lib/domain";
+import { claimCode, money, dateTime, errorMessage, fileError, today } from "@/lib/domain";
 import type { Claim, Payout } from "@/lib/types";
 import AIClaimCheck from "@/components/AIClaimCheck";
 import ClaimClarifications from "@/components/ClaimClarifications";
@@ -192,7 +192,7 @@ export function ClaimDetailWorkspace({
         </>
       )}
       <PageHeader
-        eyebrow={`CLAIM ${id.slice(0, 8).toUpperCase()}`}
+        eyebrow={`CLAIM ${claimCode(claim)}`}
         title={claim.activity?.name ?? "Expense claim"}
         description={`Submitted by ${claim.claimant?.display_name ?? "Member"}`}
         action={

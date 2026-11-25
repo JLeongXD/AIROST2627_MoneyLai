@@ -73,6 +73,7 @@ test("Format stored decimal amounts as MYR", () => {
 test("All claim states have a user-facing label", () => {
   assert.deepEqual(Object.keys(STATUS_LABELS).sort(), [
     "approved",
+    "cancelled",
     "draft",
     "needs_info",
     "paid",

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Journey } from "./Creative";
-import { dateTime, money } from "@/lib/domain";
+import { claimCode, dateTime, money } from "@/lib/domain";
 import { StatusBadge } from "./UI";
 import type { Claim } from "@/lib/types";
 export default function ClaimsTable({
@@ -39,7 +39,7 @@ export default function ClaimsTable({
             <article key={c.id} className="claim-ticket">
               <div className="ticket-top">
                 <div className="ticket-meta">
-                  <small>ML / {c.id.slice(0, 6).toUpperCase()}</small>
+                  <small>{claimCode(c)}</small>
                   <StatusBadge status={c.info_requested_at ? "needs_info" : c.status} />
                 </div>
                 <h3>
@@ -103,7 +103,7 @@ export default function ClaimsTable({
                     <Link className="claim-title" href={`/claims/${c.id}`}>
                       {c.description}
                     </Link>
-                    <small>{c.activity?.name ?? "Activity unavailable"}</small>
+                    <small>{claimCode(c)} · {c.activity?.name ?? "Activity unavailable"}</small>
                   </td>
                   {showClaimant && (
                     <td>{c.claimant?.display_name ?? "Member"}</td>

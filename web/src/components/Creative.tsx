@@ -39,6 +39,7 @@ export function Journey({
   status: ClaimStatus;
   compact?: boolean;
 }) {
+  if (status === "cancelled") return <p className="muted">Cancelled claim — historical record only.</p>;
   const steps = ["Draft", "Submitted", "Approved", "Reimbursed"];
   const index = { draft: 0, submitted: 1, needs_info: 1, approved: 2, paid: 3, rejected: 1 }[
     status

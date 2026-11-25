@@ -11,12 +11,17 @@
     "db:generate-setup": "node ../supabase/generate-setup.mjs",
     "test": "node --test tests/domain.test.cjs tests/live-sync.test.mjs",
     "test:database": "node tests/database.test.mjs && node --test tests/setup.test.mjs",
-    "test:ai": "node --test tests/ai-check.test.cjs tests/gemini.test.cjs"
+    "test:ai": "node --test tests/ai-check.test.cjs tests/gemini.test.cjs",
+    "test:exports": "node --test tests/reports.test.mjs tests/exports-database.test.mjs tests/export-route.test.mjs"
   },
   "dependencies": {
+    "@pdf-lib/fontkit": "^1.1.1",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.119.0",
+    "exceljs": "^4.4.0",
+    "jszip": "^3.10.2",
     "next": "16.4.4",
+    "pdf-lib": "^1.17.1",
     "react": "19.3.0",
     "react-dom": "19.3.0"
   },
