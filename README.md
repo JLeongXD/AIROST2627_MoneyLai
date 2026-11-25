@@ -1,174 +1,247 @@
 # MoneyLai
 
-Complete basic club budget and reimbursement web application. English interface; Member and Treasurer roles. No AI integration is included.
+A university club budget and expense reimbursement web application built for the AIROST internship project. MoneyLai connects Member expense submission, Treasurer review and payment recording, and President financial oversight in one role-controlled workflow.
 
-## 中文快速开始
+It includes optional Gemini receipt assistance, item-level claim allocation, clarification requests, duplicate-receipt warnings and downloadable activity reports. MoneyLai records reimbursements made outside the application; it does **not** transfer money or automatically approve claims.
 
-这是基于原项目完成的版本，原 ZIP 不会被修改。建议先解压到一个新目录，保留旧项目作备份。不要把旧版 `page.tsx` 覆盖到新版中。
+- **Repository:** https://github.com/JLeongXD/AIROST2627_MoneyLai
+- **Live website:** Not recorded in this README yet. Add the public deployed URL before submission.
+- **Project documentation:** [Web/App project document](docs/MoneyLai_Project_Documentation.docx) | [Technical document](docs/MoneyLai_Technical_Documentation.docx)
 
-### 1. 配置 Supabase 数据库
+## Features and roles
 
-**已有 MoneyLai 数据库（已执行 001–005）：只执行一次 `supabase/migrations/006_complete_workflow.sql`。**
+| Role | Main capabilities |
+| --- | --- |
+| Member | Maintain payout details; create and edit own drafts; upload receipts; submit, withdraw and revise eligible claims; answer information requests; track reimbursement. |
+| Treasurer | Propose activities and budget changes; review other members' claims in an embedded review workspace; request information; approve/reject; record external payments with proof; export activity evidence packs. |
+| President | Approve/reject budget requests; inspect financial summaries and restricted non-draft claim information; download summary packs without private receipts or bank details. |
 
-它会保留原来的活动和申请，补上角色、收据、审核、付款与历史记录，并改成通过受控 RPC 修改业务数据。旧版直接 `.insert()` / `.update()` 的页面应与新版代码一起替换。
+Additional features:
 
-**全新 Supabase 项目：** 执行一次 `supabase/SETUP_FRESH.sql`。不要在已有活动或申请表的项目执行这份全新安装脚本。
+- Guided expense entry and private JPG, PNG or PDF receipt previews.
+- Optional receipt-first drafting: Gemini extracts one receipt, then the user confirms relevant items, exclusions, adjustments and suggested fields.
+- Claim-versus-receipt AI checks with consent, outdated-result detection and manual review fallback.
+- Potential duplicate detection using indexed file fingerprints and receipt details. A warning is not a finding of fraud.
+- Clarification requests and replies, with claim and activity audit histories.
+- Excel, PDF and ZIP activity exports with role-specific evidence access.
+- Five-second polling, focus and connectivity-triggered refresh, operation feedback and sync status. This is not a WebSocket subscription or an offline-write queue.
+- Desktop top navigation and mobile bottom navigation.
 
-在 Supabase Dashboard 的 SQL Editor 执行。不是在 VS Code terminal 执行，也不是只把文件放进文件夹。006 使用一个事务；有错误时请先处理错误，不要逐句跳过。
+## Technology stack
 
-### 2. 建立会员与财政账号
+| Layer | Technology |
+| --- | --- |
+| Application | Next.js 16.4.4 App Router, React 19.3.0, TypeScript |
+| Styling | CSS and CSS Modules |
+| Identity and persistence | Supabase Auth, PostgreSQL, RLS and controlled PL/pgSQL RPCs |
+| Documents | Supabase private Storage buckets and signed URLs |
+| Optional AI | Google Gemini, called by server Route Handlers |
+| Reports | ExcelJS, pdf-lib, @pdf-lib/fontkit and JSZip |
+| Local database tests | PGlite embedded PostgreSQL |
 
-在 Supabase Authentication 中手动创建账号并确认邮箱：
+## Local setup
 
-- 一位普通会员。
-- 一位财政；若财政也会提交自己的申请，另需第二位财政，避免自己审核自己。
+### 1. Install dependencies
 
-新账号默认角色是 member。迁移会为原有账号补建 profile，不会自动把任何人提升为财政。
-
-将 `supabase/BOOTSTRAP_ROLES.sql` 中的示例邮箱改成真实财政账号，再在 SQL Editor 执行。不要把真实密码写入代码。账号通过受控邀请或后台创建；在 Supabase Auth 设置关闭公开注册和匿名登录，使所有登录账号都属于这个社团。
-
-### 3. 配置网站
-
-在 `web` 目录创建 `.env.local`，可以复制原来的文件，或参考 `.env.example`：
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
-```
-
-只使用 publishable key，不要把 secret key、service_role key 或数据库密码放入 `NEXT_PUBLIC_` 变量。交付 ZIP 不包含原来的 `.env.local`。
-
-### 4. 安装并运行
-
-安装支持此项目所锁定 Next.js 版本的 Node.js LTS。保留附带的 package-lock.json。
+Use a Node.js version compatible with the installed Next.js release and preserve the committed lockfile.
 
 ```powershell
-cd web
+git clone https://github.com/JLeongXD/AIROST2627_MoneyLai.git
+cd AIROST2627_MoneyLai/web
 npm ci
+```
+
+### 2. Configure Supabase
+
+Create a Supabase project or use the existing MoneyLai project. Database SQL is executed in **Supabase Dashboard > SQL Editor**, not by merely placing files in this repository.
+
+**Fresh database only:** run [supabase/SETUP_FRESH.sql](supabase/SETUP_FRESH.sql). This file combines the ordered migrations. Never run it over an existing MoneyLai database.
+
+**Existing database:** identify which migrations have already been applied and run only the missing migrations in order. Migrations are not a set of scripts to rerun indiscriminately. Back up important data before applying schema changes.
+
+| Migration | Purpose |
+| --- | --- |
+| 001-005 | Initial activities, claims and draft operations |
+| 006 | Complete workflow, profiles, receipts, payments, permissions and audit records |
+| 007 | President role and restricted overview |
+| 008 | President-reviewed activity/budget proposals |
+| 009 | AI claim-check records and controlled AI operations |
+| 010 | Clarification workflow and receipt fingerprint indexing |
+| 012 | Activity exports and restoration of the claim-based budget model |
+| 013 | Optional receipt-first drafting, confirmed allocation plans and revision history |
+
+Migration 011 is retired and is not required for a fresh installation. Migration 012 can follow 010 or a deployment that previously applied the retired procurement migration. It disables the old procurement endpoints/guards while preserving historical data. The current application does not expose a procurement pre-approval workflow.
+
+If migrations change, regenerate the fresh-install script from `web`:
+
+```powershell
+npm run db:generate-setup
+```
+
+This regenerates a **local file**; it does not apply SQL to Supabase.
+
+### 3. Create accounts and assign roles
+
+Create and confirm accounts through Supabase Authentication. New application profiles default to `member`.
+
+Edit the example emails in [BOOTSTRAP_ROLES.sql](supabase/BOOTSTRAP_ROLES.sql), then run the script as the project owner to assign Treasurer and President roles. Use a second Treasurer if a Treasurer needs to submit personal claims: a person cannot approve their own claim.
+
+The application assumes one club with controlled account provisioning. Configure Auth registration settings accordingly. Do not commit account passwords or real payout information as demo data.
+
+### 4. Set environment variables
+
+From `web`, copy the example file:
+
+```powershell
+Copy-Item .env.example .env.local
+```
+
+Configure the following values using [web/.env.example](web/.env.example):
+
+| Variable | Location and purpose |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | Browser/server Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Browser-safe publishable key; database access still depends on RLS/RPC permissions |
+| `GEMINI_API_KEY` | Server-only key for optional AI operations |
+| `GEMINI_MODEL` | Server-only model identifier supported by your Gemini account |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server-only privileged key for protected AI, receipt and export operations |
+
+Never prefix server credentials with `NEXT_PUBLIC_`, commit `.env.local`, or expose a service-role key to the browser. AI suggestions remain optional; manual claim entry and human review remain available when AI is unavailable. Export and receipt-assistance server routes require their corresponding database and server configuration.
+
+### 5. Start the application
+
+```powershell
 npm run dev
 ```
 
-打开 `http://localhost:3000`，使用 Authentication 中建立的账号登录。
+Open http://localhost:3000 and sign in with a configured account.
 
-发布前检查：
+## End-to-end demonstration
 
-```powershell
-npm run typecheck
-npm test
-npm run build
-```
+1. Treasurer proposes an activity and its budget; President reviews the request.
+2. Member enters payout details in Profile, using fictional details for demonstrations.
+3. Member selects an activity and enters an expense manually, or uses receipt assistance and confirms its item selection/calculation.
+4. Member saves the draft, checks attached originals and uploads any required receipt/supporting documents.
+5. Member optionally runs AI checking with consent, reviews warnings and submits for human review.
+6. Treasurer inspects the original documents and allocation. They approve, reject or request more information; Member can reply to an information request.
+7. After approval, Treasurer makes the bank/e-wallet transfer **outside MoneyLai**.
+8. Treasurer records its date, reference and payment proof, confirming that the external transfer is complete.
+9. Member checks reimbursement status and history. President reviews the restricted overview; permitted roles export the activity pack.
 
-### 5. 完整演示流程
+Eligible submitted claims can be withdrawn; rejected claims can be revised. Draft deletion and reversal of approval are subject to ownership, history and workflow rules. Previously submitted records are retained where required for traceability.
 
-1. 财政登录，进入 Activities，创建活动和预算。
-2. 会员登录，进入 Profile，填写真实使用前已核对的收款资料；演示使用虚构资料。
-3. New claim：选择活动、金额、日期、类别、用途，保存草稿。
-4. 在申请详情上传至少一份 Receipt，按 Submit for review。
-5. 财政在 Treasury 的 Pending review 打开申请，核对原件后批准或填写拒绝原因。
-6. 批准后，财政在系统外完成银行或电子钱包转账。
-7. 在申请详情填写付款日期、编号、上传凭证，确认已转账，记录付款。
-8. 会员在 My claims 查看 Reimbursed、付款记录及时间线。
+## Financial rules and security
 
-被拒绝的申请可以 Start revision，修改后重新提交。Submitted 可撤回为草稿。Approved 在付款前可由非申请人财政说明原因撤销批准。Paid 只读。
+- Currency is MYR. PostgreSQL numeric values and server-side validation govern financial decisions.
+- Committed expenditure = Approved + Paid claim amounts.
+- Available budget = activity allocation minus committed expenditure.
+- Submitted claims do not reserve budget. Recording payment moves Approved to Paid without deducting the budget twice.
+- Financial RPCs validate permissions and lock relevant records within transactions. A payment is unique per claim, and payment retry handling prevents a second payment record.
+- RLS, Storage policies and controlled `ml_*` RPCs are the security boundary. Hiding an action in the UI is not authorization.
+- Members cannot inspect other members' private claim evidence or payout details. President summaries do not confer Treasurer privileges.
+- Receipts and payment proofs use private storage and short-lived signed links. Standard attachments support JPG, PNG and PDF, up to 5 MB per file and five receipt/supporting attachments per claim.
+- Receipt-first item selection supports one receipt per claim. It allocates eligible items within an expense; it is not a multi-person reimbursement splitting feature.
+- AI findings and duplicate warnings support human decisions. They are not automatic approvals, confidence guarantees or fraud verdicts.
 
-## Source organisation
+## Activity exports
 
-Next.js App Router requires `page.tsx` route entry files. They contain only a small export or wrapper. Edit the clearly named files below for actual page code:
+Treasurer activity packs include Excel, linked PDF reports and permitted original receipt/payment-proof evidence. President packs contain summaries and exclude private evidence and audit records.
+
+The report generator limits an activity export to 1,000 claims, 200 evidence files, 5 MB per evidence file, 50 MB of original evidence and a 60 MB ZIP. Unsupported or damaged evidence may be noted in the manifest rather than fully embedded in the PDF; inspect reported issues and retained originals.
+
+Export PDFs use the bundled Noto Sans SC font; retain its accompanying OFL license in `web/public/fonts`.
+
+## Routes and source layout
+
+| Route | Purpose |
+| --- | --- |
+| `/login` | Sign-in and password recovery request |
+| `/dashboard` | Member/Treasurer overview |
+| `/activities` | Activity budgets, proposals and exports |
+| `/claims` | Own claim list, search and filters |
+| `/claims/new` | Manual or receipt-assisted draft entry |
+| `/claims/[id]` | Evidence, AI checks, clarifications, decisions, payment and history |
+| `/claims/[id]/edit` | Edit an eligible own draft |
+| `/treasury` | Review/payment queues and embedded claim workspace |
+| `/president` | Restricted oversight and budget decisions |
+| `/profile` | Profile and payout details |
+| `/update-password` | Password update after recovery |
+| `/auth/callback` | Auth/recovery code exchange |
 
 ```text
 web/src/
-  features/
-    auth/LoginPage.tsx
-    auth/UpdatePasswordPage.tsx
-    dashboard/DashboardPage.tsx
-    activities/ActivitiesPage.tsx
-    claims/MyClaimsPage.tsx
-    claims/ClaimEditorPage.tsx       # shared new/edit form
-    claims/ClaimDetailPage.tsx       # files, review, payment, history
-    treasury/TreasuryPage.tsx
-    profile/ProfilePage.tsx
-  components/
-    AppShell.tsx                    # navigation + UI session gate
-    AuthProvider.tsx                # browser session + profile
-    ClaimsTable.tsx
-    UI.tsx
+  app/              Next.js routes, styles and server API handlers
+  features/         Named page implementations, grouped by feature
+  components/       Shared navigation, receipts, AI, review and export UI
   lib/
-    api.ts                         # queries, RPC and private file helpers
-    domain.ts                      # validation and formatting
-    types.ts
-    useLoad.ts
-    supabase/client.ts
-    supabase/server.ts              # recovery callback only
-  app/                             # short Next.js route entries
-supabase/
-  migrations/001...006              # source of database changes
-  SETUP_FRESH.sql                   # new projects only
-  BOOTSTRAP_ROLES.sql               # manually replace sample emails
+    ai/             AI schemas, extraction, allocation and server helpers
+    reports/        Activity report generation
+    supabase/       Browser/server Supabase clients
+    api.ts          Authenticated queries, RPC and file helpers
+    domain.ts       Shared validation and formatting
+    live-sync.ts    Polling and connectivity refresh coordination
+web/tests/          Unit, route and embedded-database tests
+supabase/           Ordered migrations, fresh setup and role bootstrap
 ```
 
-| Route | Purpose |
-|---|---|
-| `/` | Redirect to overview |
-| `/login` | Sign in and password recovery request |
-| `/dashboard` | Member or treasurer summary |
-| `/activities` | Budgets; treasury-only activity management |
-| `/claims` | Own claims, search, state filter, draft deletion |
-| `/claims/new` | Save a draft |
-| `/claims/[id]` | Attachments, submit, history, review, payment |
-| `/claims/[id]/edit` | Edit own draft |
-| `/treasury` | Review/payment queues and history |
-| `/profile` | Display name and private payout details |
-| `/update-password` | Update password after a recovery link |
-| `/auth/callback` | Exchange a Supabase recovery/auth code |
+## Checks and tests
 
-## Architecture and permissions
-
-The React interface uses Supabase Auth and authenticated Data API calls. PostgreSQL RLS enforces record access. Public application tables are read-only to the normal browser client after 006; controlled `ml_*` database RPCs perform business writes. The UI session gate improves navigation but is not the security boundary.
-
-Each exposed mutation verifies the current identity and ownership/treasurer role inside the database. Internal helpers have no direct authenticated execution grant. SECURITY DEFINER functions use an empty search_path and schema-qualified application objects. Ordinary members cannot assign roles or mutate approved amounts, status or payment records directly.
-
-The app uses one club. All configured users can see activity budget summaries, but cannot see other members' claim details, receipts or bank details. Treasurers can access records needed to review and reimburse claims. A treasurer's own claim must be handled by another treasurer.
-
-### Budget calculations
-
-- Approved expenditure = Approved + Paid claim amounts.
-- Available = allocation minus approved expenditure.
-- Pending review = Submitted claim amounts; these do not reserve funds.
-- Awaiting payment = Approved claim amounts.
-- Payment changes Approved to Paid without subtracting budget again.
-- Approvals and budget adjustments lock the activity first, then the claim, and validate within the transaction.
-- One payment per claim, enforced by a unique constraint. Recording a completed payment again returns the existing payment instead of duplicating it.
-
-Amounts are MYR and use exact PostgreSQL numeric values. UI totals are only presentation; the database makes all budget decisions.
-
-### Documents
-
-006 creates two private Storage buckets: `receipts` and `payment-proofs`. JPG, PNG and PDF only, maximum 5 MB per file. Five receipt/supporting attachments per claim. At least one receipt is required before submission.
-
-Documents use `user-id/claim-id/random-name.ext`. Storage policies check identity, claim state and permitted purpose. Linked receipts and recorded payment proofs cannot be removed directly. Preview access uses short-lived signed URLs; click the preview button, then the generated link. Payment proof becomes visible to the relevant claimant after the payment is recorded.
-
-Draft deletion is allowed only before any submission history and after attachments have been removed from the claim detail page. A revised, previously submitted draft is retained for traceability. If storage cleanup fails after unlinking an attachment, the app reports it; remove the orphan object manually through Storage when confirmed unreferenced. Do not delete file metadata directly through SQL as routine cleanup.
-
-### Password recovery
-
-Set the Supabase Auth Site URL to the deployed origin. Add allowed redirect URLs for localhost and production, including `http://localhost:3000/auth/callback` and `https://YOUR_HOST/auth/callback`. Ensure the query form used by recovery (`?next=/update-password`) is allowed by the redirect configuration. For reliable email delivery, configure an appropriate SMTP provider and verify the actual recovery flow. The code callback and reset UI are included; real mail delivery is project configuration, not provided credentials.
-
-## Validation
-
-See `docs/VERIFICATION.md` for completed checks and limits. Lightweight domain tests require only installed project dependencies. Optional database tests execute the real migrations in embedded PostgreSQL, with only Supabase Auth/Storage infrastructure stubbed:
+Run from `web` after `npm ci`:
 
 ```powershell
-# Optional local integration-test dependency; not a runtime requirement.
-npm install --no-save --package-lock=false @electric-sql/pglite
+npm run typecheck
+npm run lint
+npm test
+npm run test:ai
 npm run test:database
+npm run test:exports
+npm run test:receipts
+npm run build
 ```
 
-They do not connect to or modify a remote Supabase project. They cannot verify live Supabase Auth mail delivery, Storage HTTP uploads or production connection settings.
+| Command | Coverage |
+| --- | --- |
+| `npm test` | Domain validation and live-sync behavior |
+| `npm run test:ai` | Claim comparison and mocked Gemini responses/failures |
+| `npm run test:database` | Workflow/security migrations and setup checks |
+| `npm run test:exports` | Report generation, export permissions and route behavior |
+| `npm run test:receipts` | Receipt assistance, allocation, database and route behavior |
+
+Database suites use local embedded PostgreSQL with test infrastructure; they are not live Supabase acceptance tests. AI tests do not establish that a real Gemini account has sufficient quota or that production receipt extraction succeeds.
+
+These commands are reproducible checks, **not a claim that they currently all pass**. [docs/VERIFICATION.md](docs/VERIFICATION.md) is an older, dated verification record; it does not verify every newer feature. Before release, rerun checks and test actual login, role restrictions, uploads, recovery email, AI, exports and reimbursement against the configured environment.
 
 ## Deployment
 
-Import the repository into Vercel, set Root Directory to `web`, configure the two environment variables, and deploy using the committed lockfile. Apply the matching database migration separately in Supabase. Set Auth URLs to the actual host. No AI service or separate Python server is needed.
+Suggested configuration for a Next.js-compatible host such as Vercel:
+
+1. Import the GitHub repository and set the project root to `web`.
+2. Configure the environment variables listed above in the hosting dashboard.
+3. Apply only the missing Supabase migrations for the same application version.
+4. Build with `npm run build` and deploy. If the host requires a start command, use `npm run start`.
+5. Set Supabase Auth Site URL to the deployed origin and allow the production `/auth/callback` redirect, including the recovery query form `?next=/update-password`. Keep localhost redirects for local development if needed.
+6. Configure email delivery and test the actual password recovery flow.
+7. Verify the host's request-duration, memory and file limits for AI/report operations; a route's declared timeout does not override hosting limits.
+8. Test each role using appropriate demonstration accounts, then add the deployed URL to the top of this README.
+
+Do not upload credentials into the public repository. Provide any demonstration login instructions through the appropriate assessment channel, using non-sensitive demo data.
 
 ## Current boundaries
 
-No AI, automatic money transfer, self-service role administration, email notifications, multiple clubs/currencies, partial reimbursements, refunds or accounting ledger. Lists show up to 500 recent claims and provide client-side search/filter; add server pagination if the real dataset grows beyond this. This delivery provides the basic workflow; it does not silently deploy or migrate your live project.
+- One club and one currency; no automatic transfer, partial reimbursement or refund accounting.
+- Several claim views load up to 500 recent records and then filter locally. Older records can fall outside those lists; server-side pagination remains a scalability improvement.
+- Connectivity feedback and refresh are included; offline editing/submission is not guaranteed.
+- Duplicate detection is limited to indexed receipts; matching details can require human interpretation.
+- Source code and local tests do not prove which migrations are currently applied in the remote Supabase project.
+- Hosting, live Auth email, external API access and deployment URL must be configured and verified separately.
+
+## Project documentation
+
+The Web/App documentation follows the supplied sections: Project Overview, Features, Data Design and Technology Stack.
+
+- [Web/App project documentation - editable Word](docs/MoneyLai_Project_Documentation.docx)
+- [Technical documentation - editable Word](docs/MoneyLai_Technical_Documentation.docx)
+The technical document covers environment setup, development, usage and weekly progress. Export the final Word documents to PDF if required by the submission form.
+
+Complete team/member details and the live website URL before submission. Public documentation should use example credentials and fictional payout data only.
+
