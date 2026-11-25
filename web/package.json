@@ -8,8 +8,9 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "node --test tests/domain.test.cjs",
-    "test:database": "node tests/database.test.mjs",
+    "db:generate-setup": "node ../supabase/generate-setup.mjs",
+    "test": "node --test tests/domain.test.cjs tests/live-sync.test.mjs",
+    "test:database": "node tests/database.test.mjs && node --test tests/setup.test.mjs",
     "test:ai": "node --test tests/ai-check.test.cjs tests/gemini.test.cjs"
   },
   "dependencies": {
@@ -20,6 +21,7 @@
     "react-dom": "19.3.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

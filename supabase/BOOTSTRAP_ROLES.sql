@@ -9,6 +9,13 @@ where id in (
     )
 );
 
+-- Replace the sample email with your actual President account before running.
+update public.profiles
+set role = 'president'
+where id in (
+    select id from auth.users where email = 'president@example.com'
+);
+
 select
     p.id,
     u.email,

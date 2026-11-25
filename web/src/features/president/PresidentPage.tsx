@@ -153,7 +153,12 @@ export default function PresidentPage() {
         {visible.length === 0 ? (
           <p>No claims match these filters.</p>
         ) : (
-          <div className={styles.tableScroll}>
+          <div
+            className={styles.tableScroll}
+            role="region"
+            aria-label="Club claim summaries, scroll horizontally for more columns"
+            tabIndex={0}
+          >
             <table className={styles.table}>
               <caption className={styles.srOnly}>
                 Club claim summaries, read-only

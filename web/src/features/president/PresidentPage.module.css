@@ -2,7 +2,7 @@
   display: grid;
   gap: 24px;
   min-width: 0;
-  font-size: 16px;
+  font-size: var(--ui-body-size, 17px);
 }
 .budgets {
   display: grid;
@@ -20,6 +20,7 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
+  flex-wrap: wrap;
 }
 .cardHeading h3 {
   font-size: 18px;
@@ -27,7 +28,7 @@
 }
 .cardHeading > span {
   color: #526c62;
-  font-size: 13px;
+  font-size: 14px;
 }
 .budgetCard p {
   margin-bottom: 12px;
@@ -38,13 +39,13 @@
   accent-color: #176b5c;
 }
 .caption {
-  font-size: 14px;
+  font-size: 16px;
   color: #536b62;
   line-height: 1.7;
 }
 .budgetCard dl {
   margin: 16px 0 0;
-  font-size: 14px;
+  font-size: 16px;
 }
 .budgetCard dl > div {
   display: flex;
@@ -61,39 +62,45 @@
 }
 .filters {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(160px, 1fr));
   gap: 16px;
   margin: 24px 0;
 }
 .filters label {
-  font-size: 14px;
+  min-width: 0;
+  font-size: 16px;
   font-weight: 600;
 }
 .filters input,
 .filters select {
   display: block;
   margin-top: 8px;
-  min-height: 46px;
-  font-size: 16px;
+  min-height: 48px;
+  font-size: 17px;
 }
 .tableScroll {
   overflow-x: auto;
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid #dfe7e4;
+  border-radius: 12px;
 }
 .table {
   width: 100%;
-  min-width: 680px;
+  min-width: 780px;
   border-collapse: collapse;
   text-align: left;
-  font-size: 15px;
+  font-size: 16px;
+  line-height: 1.65;
 }
 .table th {
   background: #f2f6f3;
   color: #486257;
-  font-size: 13px;
+  font-size: 15px;
 }
 .table th,
 .table td {
-  padding: 16px 12px;
+  padding: 18px 16px;
   border-bottom: 1px solid #e2e9e4;
   vertical-align: top;
 }
@@ -103,7 +110,10 @@
   max-width: 340px;
   overflow-wrap: anywhere;
   margin-top: 5px;
-  font-size: 14px;
+  font-size: 16px;
+}
+.table tbody tr:hover {
+  background: #f7f9f5;
 }
 .amount {
   white-space: nowrap;
@@ -116,7 +126,7 @@
   overflow: hidden;
   clip-path: inset(50%);
 }
-@media (max-width: 700px) {
+@media (max-width: 900px) {
   .filters {
     grid-template-columns: 1fr;
   }

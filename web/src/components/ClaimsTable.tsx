@@ -77,7 +77,12 @@ export default function ClaimsTable({
           ))}
         </div>
       ) : (
-        <div className="table-scroll">
+        <div
+          className="table-scroll"
+          role="region"
+          aria-label="Claims table, scroll horizontally for more columns"
+          tabIndex={0}
+        >
           <table className="data-table">
             <thead>
               <tr>

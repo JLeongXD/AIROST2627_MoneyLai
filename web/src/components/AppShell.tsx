@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { errorMessage } from "@/lib/domain";
 import type { Profile } from "@/lib/types";
 import { Icon } from "./Creative";
+import LiveSyncStatus from "./LiveSyncStatus";
 export function WorkspaceFrame({
   profile,
   children,
@@ -91,6 +92,7 @@ export function WorkspaceFrame({
         <span>Every Ringgit. Every Receipt. Every Decision.</span>
       </div>
       <main id="main-content" className="page-content hybrid-content">
+        <LiveSyncStatus />
         {children}
       </main>
       <footer className="hybrid-footer">

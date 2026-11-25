@@ -1,0 +1,599 @@
+/* Shared typography and layout, loaded after the original visual theme. */
+.sync-status {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 24px;
+  color: #52685b;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.sync-status > span { color: #176b5c; }
+.sync-status:is(.offline, .delayed) {
+  padding: 12px 16px;
+  border: 1px solid #e4d09a;
+  border-radius: 10px;
+  background: #fff7e5;
+  color: #73551d;
+}
+.sync-status:is(.offline, .delayed) > span { color: #946912; }
+.hybrid-app {
+  --ui-body-size: 17px;
+  --ui-label-size: 16px;
+  --ui-caption-size: 14px;
+  font-size: var(--ui-body-size);
+  line-height: 1.65;
+}
+
+.hybrid-app :is(
+  .page-header p, .workspace-hero p, .editorial-note p,
+  .notice, .muted, .claim-description, .guidance p, .guidance ol,
+  .empty-state p, .empty-preview p, .flow-controls p, .journey > p,
+  .timeline p, .payout-card strong, .payout-card span,
+  .details-list dd, .attachment-list strong
+) {
+  font-size: var(--ui-body-size);
+  line-height: 1.65;
+}
+
+.hybrid-app :is(
+  .desktop-nav > a, .profile-menu > summary,
+  .profile-popover > a, .profile-popover > button,
+  .button, .text-button, .row-actions, .row-actions .text-button,
+  .view-switch button, .tabs button, .receipt-file-tabs button,
+  .section-heading a, .field label, .stat-card > span,
+  .feed-row strong, .feed-row p, .activity-selector strong,
+  .budget-visual h3, .budget-legend, .budget-row > div,
+  .ticket-top p, .timeline strong, .details-list dt,
+  .budget-summary span, .budget-summary small, .drop-hint,
+  .checkbox-label, .loading-panel
+) {
+  font-size: var(--ui-label-size);
+}
+
+.hybrid-app :is(
+  .field input, .field select, .field textarea,
+  .filter-bar input, .filter-bar select, input[type="file"]
+) {
+  font-size: var(--ui-body-size);
+  line-height: 1.5;
+}
+
+.hybrid-app :is(
+  small, .small-text, .eyebrow, .hero-kicker,
+  .role-pill, .workspace-context, .workspace-context > span:last-child,
+  .hybrid-footer, .badge, .stat-card > small, .field small,
+  .feed-row small, .activity-selector small, .budget-visual .muted,
+  .budget-row span, .budget-row small, .budget-ring span,
+  .ticket-meta > small, .ticket-footer, .ticket-footer .row-actions,
+  .journey small, .journey.compact small,
+  .attachment-list small, .file-link, .table-note, .timeline small,
+  .ai-split .ai-workspace-steps span, .status-pills button span
+) {
+  font-size: var(--ui-caption-size);
+  line-height: 1.6;
+}
+
+.hybrid-app .data-table :is(th, td) {
+  padding: 18px 12px;
+  line-height: 1.6;
+}
+
+.hybrid-app .data-table th {
+  font-size: 15px;
+  letter-spacing: 0.4px;
+}
+
+.hybrid-app .data-table td {
+  font-size: var(--ui-label-size);
+}
+
+.hybrid-app .data-table td small {
+  font-size: var(--ui-caption-size);
+}
+
+.hybrid-app .button {
+  min-height: 48px;
+  padding: 11px 18px;
+}
+
+.hybrid-app :is(.page-header, .section-heading) {
+  flex-wrap: wrap;
+}
+
+.hybrid-app :is(.row-actions, .ticket-footer) {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.hybrid-app .feed-row p {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.hybrid-app .wizard-steps li {
+  font-size: 15px;
+  flex-wrap: wrap;
+}
+
+.hybrid-app .journey small {
+  overflow-wrap: anywhere;
+}
+
+.hybrid-app .activity-card .muted {
+  min-height: 0;
+}
+
+/* Leave room for the larger navigation labels on smaller laptop screens. */
+@media (min-width: 781px) and (max-width: 1200px) {
+  .hybrid-app .nav-inner {
+    gap: 16px;
+  }
+
+  .hybrid-app .desktop-nav {
+    gap: 4px;
+  }
+
+  .hybrid-app .desktop-nav > a {
+    padding: 10px 8px;
+  }
+
+  .hybrid-app .nav-account {
+    gap: 8px;
+  }
+}
+
+/* Let content determine height; narrow columns stack before text gets cramped. */
+.hybrid-app {
+  --muted: #52685b;
+}
+
+.hybrid-app :is(.page-header > div, .section-heading > div,
+  .panel, .stat-card, .inbox-detail, .executive-amount,
+  .explorer-body > *, .detail-grid > *, .ai-split > *) {
+  min-width: 0;
+}
+
+.hybrid-app .hybrid-content {
+  width: 100%;
+  padding: 36px clamp(20px, 3.2vw, 48px) 48px;
+}
+
+.hybrid-app .page-header {
+  align-items: flex-start;
+  gap: 20px 28px;
+}
+
+.hybrid-app .page-header > div:first-child {
+  flex: 1 1 420px;
+}
+
+.hybrid-app .page-header h1 {
+  font-size: clamp(30px, 3vw, 38px);
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.hybrid-app .page-header p {
+  max-width: 72ch;
+}
+
+.hybrid-app .header-action {
+  max-width: 100%;
+}
+
+.hybrid-app :is(.button, .text-button, .profile-popover > a,
+  .profile-popover > button, .view-switch button, .tabs button,
+  .receipt-file-tabs button, .input-with-action button) {
+  min-height: 44px;
+  white-space: normal;
+}
+
+.hybrid-app .button {
+  text-align: center;
+}
+
+.hybrid-app :is(input:not([type="checkbox"]), select, textarea) {
+  min-height: 48px;
+}
+
+.hybrid-app .stats-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.hybrid-app .stats-grid.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.hybrid-app .stat-card {
+  padding: 24px;
+  gap: 10px;
+}
+
+.hybrid-app .stat-card > strong {
+  font-size: clamp(25px, 2.3vw, 32px);
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+}
+
+.hybrid-app .stat-card > span {
+  min-height: 3.3em;
+}
+
+.hybrid-app :is(.stat-card > span, .details-list dt, .small-text,
+  .table-note, .field small, .data-table th, .feed-row small,
+  .workspace-context, .hybrid-footer, .eyebrow, .hero-kicker) {
+  color: var(--muted);
+}
+
+.hybrid-app .filter-bar {
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.hybrid-app .filter-bar :is(input, .search-field) {
+  flex: 1 1 280px;
+}
+
+.hybrid-app .filter-bar select {
+  flex: 1 1 200px;
+  width: auto;
+  max-width: 320px;
+}
+
+.hybrid-app :is(.tabs, .view-switch, .receipt-file-tabs,
+  .ai-workspace-steps, .form-actions, .budget-row > div) {
+  flex-wrap: wrap;
+}
+
+.hybrid-app :is(.notice, .drop-hint, .attachment-list strong,
+  .file-link, .details-list dd, .ticket-top h3, .ticket-top p,
+  .executive-amount > strong, .executive-strip strong) {
+  overflow-wrap: anywhere;
+}
+
+.hybrid-app .notice {
+  padding: 16px 20px;
+  line-height: 1.65;
+}
+
+.hybrid-app .loading-panel {
+  min-height: 180px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  text-align: center;
+}
+
+.hybrid-app .spinner {
+  flex-shrink: 0;
+}
+
+.hybrid-app .review-inbox {
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  gap: 28px;
+}
+
+.hybrid-app .inbox-caption {
+  font-size: 14px;
+  padding: 20px;
+}
+
+.hybrid-app .inbox-item > strong {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.hybrid-app .inbox-item > span:not(.badge) {
+  display: block;
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.hybrid-app .inbox-item > p {
+  font-size: 16px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.hybrid-app .inbox-detail :is(.page-header, .form-actions) {
+  gap: 16px;
+}
+
+.hybrid-app .inbox-detail .page-header h1 {
+  font-size: 30px;
+}
+
+.hybrid-app .inbox-detail .claim-amount {
+  font-size: clamp(32px, 3vw, 46px);
+  overflow-wrap: anywhere;
+}
+
+.hybrid-app .executive-amount > :is(small, p, div),
+.hybrid-app .executive-strip small {
+  font-size: 15px;
+}
+
+.hybrid-app .executive-amount > div {
+  flex-wrap: wrap;
+  gap: 10px 20px;
+}
+
+.hybrid-app .executive-hero p {
+  font-size: 17px;
+  max-width: 45ch;
+}
+
+.hybrid-app .executive-hero .eyebrow {
+  color: #dfbd7b;
+}
+
+.hybrid-app .trend-bars > button {
+  font-size: 14px;
+}
+
+.hybrid-app .table-scroll {
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.hybrid-app .data-table {
+  min-width: 760px;
+}
+
+.hybrid-app .data-table th {
+  background: #f2f6f3;
+}
+
+.hybrid-app .data-table tbody tr:hover {
+  background: #f7f9f5;
+}
+
+.hybrid-app .attachment-list li {
+  flex-wrap: wrap;
+}
+
+.hybrid-app .attachment-list li > div {
+  flex-basis: 180px;
+}
+
+.hybrid-app .upload-box {
+  padding: 24px;
+  border: 2px dashed #9caf9e;
+  transition: background 150ms, border-color 150ms;
+}
+
+.hybrid-app .upload-box.drag-over {
+  background: #e3eee3;
+  border-color: #176b5c;
+}
+
+.hybrid-app .receipt-file-tabs button {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.hybrid-app .wizard-steps {
+  grid-template-columns: repeat(auto-fit, minmax(125px, 1fr));
+  gap: 12px;
+}
+
+.hybrid-app .journey li {
+  min-width: 0;
+}
+
+.hybrid-app .journey ol {
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: 16px;
+}
+
+.hybrid-app .journey li::after {
+  display: none;
+}
+
+.hybrid-app .journey li > span,
+.hybrid-app .wizard-steps li > span {
+  width: 32px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.hybrid-app .journey small {
+  display: block;
+  white-space: normal;
+  overflow-wrap: normal;
+}
+
+.hybrid-app .budget-ring {
+  width: 190px;
+  height: 190px;
+}
+
+.hybrid-app .budget-ring strong small {
+  display: inline;
+  font-size: 17px;
+}
+
+.hybrid-app .profile-popover {
+  width: min(320px, calc(100vw - 32px));
+  overflow-wrap: anywhere;
+}
+
+/* A second navigation row keeps all role links readable on laptops. */
+@media (min-width: 781px) and (max-width: 1200px) {
+  .hybrid-app .nav-inner {
+    flex-wrap: wrap;
+    gap: 12px 24px;
+    padding-top: 16px;
+    padding-bottom: 12px;
+  }
+
+  .hybrid-app .desktop-nav {
+    order: 3;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-width: 1180px) {
+  .hybrid-app :is(.review-inbox, .claim-wizard, .detail-grid,
+    .bento-grid, .ai-split) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hybrid-app .inbox-queue {
+    position: static;
+    max-height: 350px;
+  }
+
+  .hybrid-app .inbox-detail .page-header .header-action {
+    display: block;
+  }
+
+  .hybrid-app .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 780px) {
+  .hybrid-app {
+    --ui-body-size: 16px;
+    --ui-label-size: 16px;
+    --ui-caption-size: 14px;
+  }
+
+  .hybrid-app .hybrid-content {
+    padding: 28px 20px 32px;
+  }
+
+  .hybrid-app .panel,
+  .hybrid-app .claim-wizard > .panel,
+  .hybrid-app .hybrid-content .profile-workspace > .panel {
+    padding: 22px;
+  }
+
+  .hybrid-app :is(.stats-grid, .stats-grid.three, .activity-grid,
+    .form-grid, .explorer-body, .executive-hero, .executive-strip) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hybrid-app .stat-card {
+    padding: 20px;
+  }
+
+  .hybrid-app .stats-grid.three .stat-card:last-child {
+    grid-column: auto;
+  }
+
+  .hybrid-app .budget-visual {
+    border-left: 0;
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+  }
+
+  .hybrid-app .executive-strip > div {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+    padding: 0 0 18px;
+  }
+
+  .hybrid-app .executive-strip > div:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .hybrid-app .executive-hero {
+    padding: 28px;
+  }
+
+  .hybrid-app .filter-bar select {
+    max-width: none;
+    flex-basis: 100%;
+  }
+
+  .hybrid-app .filter-bar > button {
+    width: 100%;
+  }
+
+  .hybrid-app .feed-row {
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .hybrid-app .feed-row > div:last-child {
+    grid-column: 2;
+    text-align: left;
+    max-width: none;
+  }
+
+  .hybrid-app .feed-row > div:last-child > strong {
+    font-size: 20px;
+  }
+
+  .hybrid-app .details-list > div {
+    flex-direction: column;
+    gap: 4px;
+    padding: 12px 0;
+  }
+
+  .hybrid-app .details-list dd {
+    max-width: 100%;
+    text-align: left;
+  }
+
+  .hybrid-app .bottom-nav > a {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 58px;
+    padding: 6px 3px;
+    font-size: 12px;
+    line-height: 1.35;
+    text-align: center;
+  }
+
+  .hybrid-app .hybrid-footer {
+    padding-bottom: calc(130px + env(safe-area-inset-bottom));
+  }
+
+  .hybrid-app .workspace-hero {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 28px;
+  }
+
+  .hybrid-app .hero-art {
+    display: none;
+  }
+}
+
+/* Recovery and account-unavailable pages live outside the role workspace. */
+.setup-screen {
+  font-size: 17px;
+  line-height: 1.65;
+  padding: 32px 20px;
+}
+
+.setup-screen .narrow {
+  max-width: 520px;
+}
+
+.setup-screen :is(.field label, .button, .notice, input) {
+  font-size: 16px;
+}
+
+.setup-screen :is(.button, input) {
+  min-height: 48px;
+}
+
+.setup-screen .eyebrow {
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hybrid-app .upload-box {
+    transition: none;
+  }
+}

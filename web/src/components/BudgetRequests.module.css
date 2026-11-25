@@ -1,18 +1,18 @@
 .section {
   margin: 24px 0;
   min-width: 0;
-  font-size: var(--student-body-size, 16px);
+  font-size: var(--ui-body-size, 16px);
 }
 .filter {
   display: block;
   max-width: 280px;
-  font-size: var(--student-label-size, 15px);
+  font-size: var(--ui-label-size, 15px);
   font-weight: 600;
   margin: 20px 0;
 }
 .filter select {
   margin-top: 8px;
-  font-size: var(--student-body-size, 16px);
+  font-size: var(--ui-body-size, 16px);
 }
 .list {
   display: grid;
@@ -38,7 +38,7 @@
 }
 .meta {
   color: #526b61;
-  font-size: var(--student-caption-size, 14px);
+  font-size: var(--ui-caption-size, 14px);
 }
 .amount {
   font-size: 18px;

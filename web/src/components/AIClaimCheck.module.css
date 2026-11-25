@@ -1,6 +1,6 @@
 .panel {
   margin-top: 24px;
-  font-size: var(--student-body-size, 16px);
+  font-size: var(--ui-body-size, 16px);
 }
 .report {
   padding: 20px;
@@ -24,14 +24,14 @@
 }
 .receipt p {
   margin: 6px 0;
-  font-size: var(--student-body-size, 14px);
+  font-size: var(--ui-body-size, 14px);
 }
 .consent {
   display: flex;
   gap: 12px;
   align-items: flex-start;
   margin: 20px 0;
-  font-size: var(--student-label-size, 14px);
+  font-size: var(--ui-label-size, 14px);
 }
 .consent input {
   width: 18px;
@@ -40,6 +40,6 @@
   margin-top: 4px;
 }
 .panel small {
-  font-size: var(--student-caption-size, 13px);
+  font-size: var(--ui-caption-size, 13px);
   color: #526b61;
 }
