@@ -69,6 +69,7 @@ export default function DashboardPage() {
         count={pending.filter((c) => c.claimant_id !== user?.id).length}
         amount={sum(approved)}
       />
+      {claims.some((c) => c.info_requested_at && c.claimant_id === user?.id) && <Notice>You have claims waiting for your response. <Link href="/claims">Open My claims and filter Needs information →</Link></Notice>}
       <div className="stats-grid">
         <StatCard
           label={fiscal ? "Loaded club claims" : "My claims"}

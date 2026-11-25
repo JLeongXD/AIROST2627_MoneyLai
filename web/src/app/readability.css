@@ -1,4 +1,14 @@
 /* Shared typography and layout, loaded after the original visual theme. */
+.badge.needs_info { background: #fff0cc; color: #73531c; }
+.clarification-item, .coach-finding {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.clarification-item p, .coach-finding p { white-space: pre-wrap; margin: 8px 0 12px; }
+.clarification-panel .reply-field { display: block; margin: 20px 0 8px; font-weight: 600; }
+.clarification-panel textarea { margin-bottom: 16px; }
+.duplicate-panel small { display: block; line-height: 1.65; }
 .sync-status {
   display: flex;
   align-items: baseline;

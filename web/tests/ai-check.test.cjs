@@ -23,6 +23,8 @@ vm.runInNewContext(compiled, {
   Error,
 });
 const { compareClaim, validateExtraction, checkSignature } = exportsObject;
+const coachExports = {};
+vm.runInNewContext(ts.transpileModule(fs.readFileSync("src/lib/ai/coach.ts", "utf8"), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText, { exports: coachExports });
 const r = (amount = "100.00", date = "2026-11-21") => ({
   attachment_id: "a",
   readable: true,
@@ -109,4 +111,17 @@ test("Duplicate warnings require attention even when amounts match", () => {
     compareClaim(data, "100.00", "2026-11-21").needs_attention,
     true,
   );
+});
+
+test("Coach turns discrepancies and ambiguity into specific corrective steps", () => {
+  const data = e([{ ...r(), readable: false, amount: null, date: null, note: "Date area was cropped" }]);
+  data.purpose_clear = false;
+  data.purpose_note = "Which club activity used these materials?";
+  const findings = coachExports.coachFindings(compareClaim(data, "100.00", "2026-11-21"), "100.00");
+  assert.ok(findings.some((f) => f.title === "Explain the club purpose" && f.evidence.includes("Which club")));
+  assert.ok(findings.some((f) => f.action === "upload" && f.evidence.includes("cropped")));
+  assert.ok(findings.every((f) => f.next.length > 0));
+});
+test("A matching readable claim produces no fabricated coaching issues", () => {
+  assert.equal(coachExports.coachFindings(compareClaim(e([r()]), "100.00", "2026-11-21"), "100.00").length, 0);
 });

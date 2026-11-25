@@ -153,6 +153,12 @@ export async function uploadAttachment(
       await createClient().storage.from("receipts").remove([path]);
     throw error;
   }
+  // Indexing is advisory; a temporary indexing failure must not lose an upload.
+  if (kind === "receipt") {
+    try {
+      await fetch(`/api/claims/${claimId}/receipt-index`, { method: "POST", signal: AbortSignal.timeout(20000) });
+    } catch { /* Treasurer can retry indexing from the duplicate review panel. */ }
+  }
 }
 export async function removeAttachment(id: string) {
   const path = await rpc<string>("ml_remove_attachment", {

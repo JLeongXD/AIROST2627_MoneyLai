@@ -40,7 +40,7 @@ export function Journey({
   compact?: boolean;
 }) {
   const steps = ["Draft", "Submitted", "Approved", "Reimbursed"];
-  const index = { draft: 0, submitted: 1, approved: 2, paid: 3, rejected: 1 }[
+  const index = { draft: 0, submitted: 1, needs_info: 1, approved: 2, paid: 3, rejected: 1 }[
     status
   ];
   return (
@@ -54,7 +54,7 @@ export function Journey({
           >
             <span>{i < index ? "✓" : String(i + 1).padStart(2, "0")}</span>
             <small>
-              {i === 1 && status === "rejected" ? "Revision needed" : s}
+              {i === 1 && status === "needs_info" ? "Information needed" : i === 1 && status === "rejected" ? "Revision needed" : s}
             </small>
           </li>
         ))}
@@ -66,6 +66,7 @@ export function Journey({
               draft:
                 "Your next step: add your receipt, then submit for review.",
               submitted: "Your claim is with Treasurer for review.",
+              needs_info: "Your next step: answer the Treasurer’s questions, update your draft and resubmit.",
               approved:
                 "Approved. Treasurer will record payment after transferring the funds.",
               paid: "Reimbursement recorded. Your payment details are below.",

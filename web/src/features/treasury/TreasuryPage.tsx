@@ -37,7 +37,7 @@ export default function TreasuryPage() {
     (c) =>
       (tab === "history"
         ? ["paid", "rejected"].includes(c.status)
-        : c.status === tab) &&
+        : tab === "needs_info" ? Boolean(c.info_requested_at) : c.status === tab) &&
       (!activity || c.activity_id === activity) &&
       `${c.description} ${c.claimant?.display_name ?? ""}`
         .toLowerCase()
@@ -83,6 +83,7 @@ export default function TreasuryPage() {
         <div className="tabs" role="group" aria-label="Treasury queue">
           {[
             { key: "submitted", label: "Review inbox" },
+            { key: "needs_info", label: "Waiting for information" },
             { key: "approved", label: "Payments" },
             { key: "history", label: "History" },
           ].map((t) => (
@@ -156,7 +157,7 @@ export default function TreasuryPage() {
                   onClick={() => setSelected(c.id)}
                 >
                   <span className={`badge ${c.status}`}>
-                    {STATUS_LABELS[c.status]}
+                    {STATUS_LABELS[c.info_requested_at ? "needs_info" : c.status]}
                   </span>
                   <strong>{c.claimant?.display_name ?? "Member"}</strong>
                   <span>{c.activity?.name}</span>

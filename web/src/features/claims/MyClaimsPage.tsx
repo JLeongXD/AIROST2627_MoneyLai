@@ -42,7 +42,7 @@ export default function MyClaimsPage() {
   }
   const filtered = (data ?? []).filter(
     (c) =>
-      (!status || c.status === status) &&
+      (!status || (status === "needs_info" ? Boolean(c.info_requested_at) : c.status === status)) &&
       `${c.description} ${c.activity?.name ?? ""}`
         .toLowerCase()
         .includes(search.toLowerCase()),

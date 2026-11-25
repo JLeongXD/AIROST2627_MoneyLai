@@ -29,6 +29,8 @@ import {
 import { money, dateTime, errorMessage, fileError, today } from "@/lib/domain";
 import type { Claim, Payout } from "@/lib/types";
 import AIClaimCheck from "@/components/AIClaimCheck";
+import ClaimClarifications from "@/components/ClaimClarifications";
+import DuplicateReceipts from "@/components/DuplicateReceipts";
 
 export default function ClaimDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -188,6 +190,8 @@ export function ClaimDetailWorkspace({
       />
       {error && <Notice tone="error">{error}</Notice>}
       {message && <Notice tone="success">{message}</Notice>}
+      <ClaimClarifications claim={claim} owner={owner} onChanged={() => { state.reload(); onChanged?.(); }} />
+      {canReview && <DuplicateReceipts claimId={id} />}
       <section className="panel">
         <div className="section-heading">
           <div>
@@ -244,7 +248,7 @@ export function ClaimDetailWorkspace({
                 <Link href={`/claims/${id}/edit`} className="button secondary">
                   Edit details
                 </Link>
-                <button
+                {!claim.info_requested_at && <button
                   className="button primary"
                   disabled={busy}
                   onClick={() =>
@@ -255,7 +259,7 @@ export function ClaimDetailWorkspace({
                   }
                 >
                   Submit for review →
-                </button>
+                </button>}
                 <button
                   className="text-button danger-text"
                   disabled={busy}
@@ -311,7 +315,7 @@ export function ClaimDetailWorkspace({
               </Notice>
             )}
           </section>
-          <section className="panel">
+          <section className="panel" id="supporting-documents">
             <div className="section-heading">
               <h2>Supporting documents</h2>
               <span className="muted">{attachments.length}/5 files</span>
@@ -498,7 +502,7 @@ export function ClaimDetailWorkspace({
               <p className="muted">
                 Check the original documents before deciding.
               </p>
-              <Field label="Reason (required to reject)" id="review-reason">
+              <Field label="Question / reason (required to request information or reject)" id="review-reason">
                 <textarea
                   id="review-reason"
                   rows={3}
@@ -509,6 +513,7 @@ export function ClaimDetailWorkspace({
                 />
               </Field>
               <div className="stack-actions">
+                <button className="button secondary" disabled={busy || reason.trim().length < 3} onClick={() => action(() => rpc("ml_request_information", { p_claim_id: id, p_question: reason }), "Information requested. Waiting for the claimant’s reply.")}>Request missing information</button>
                 <button
                   className="button primary"
                   disabled={busy}

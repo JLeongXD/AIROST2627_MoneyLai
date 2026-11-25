@@ -8,6 +8,7 @@ export type ReceiptReading = {
   currency: string | null;
   date: string | null;
   note: string;
+  receipt_number?: string | null;
 };
 export type Extraction = {
   receipts: ReceiptReading[];
@@ -98,6 +99,7 @@ export function validateExtraction(
       seen.has(r.attachment_id) ||
       typeof r.readable !== "boolean" ||
       !text(r.note) ||
+      !(r.receipt_number === undefined || r.receipt_number === null || text(r.receipt_number, 200)) ||
       !(r.merchant === null || text(r.merchant, 200)) ||
       !(
         r.amount === null ||

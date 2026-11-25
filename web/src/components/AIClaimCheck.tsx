@@ -7,6 +7,9 @@ import type { Claim, Attachment } from "@/lib/types";
 import { Notice } from "./UI";
 import { dateTime, money } from "@/lib/domain";
 import styles from "./AIClaimCheck.module.css";
+import Link from "next/link";
+import { coachFindings } from "@/lib/ai/coach";
+import { useAuth } from "./AuthProvider";
 
 export default function AIClaimCheck({
   claim,
@@ -18,6 +21,7 @@ export default function AIClaimCheck({
   onChanged: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const { user } = useAuth();
   const [consent, setConsent] = useState(false);
   const [error, setError] = useState("");
   const signature = checkSignature(claim, attachments);
@@ -39,7 +43,7 @@ export default function AIClaimCheck({
   const stale = !!saved && saved.input_signature !== signature;
   const report = saved?.status === "complete" ? saved.result : null;
   const canRun =
-    ["draft", "submitted", "rejected"].includes(claim.status) &&
+    ["draft", "submitted", "needs_info", "rejected"].includes(claim.status) &&
     attachments.some((a) => a.kind === "receipt");
   async function run() {
     if (busy || !consent) return;
@@ -75,7 +79,7 @@ export default function AIClaimCheck({
   return (
     <section className={`panel ${styles.panel}`}>
       <span className="eyebrow">GEMINI ASSISTED REVIEW</span>
-      <h2>Receipt intelligence.</h2>
+      <h2>Claim readiness coach</h2>
       <div className="ai-workspace-steps" aria-label="AI check steps">
         <span
           className={
@@ -121,6 +125,14 @@ export default function AIClaimCheck({
       )}
       {report && (
         <div className={styles.report}>
+          {!stale && <div className="coach-findings">
+            <h3>{!report.needs_attention ? "Ready for human review" : report.amount_status === "unable_to_verify" || report.date_status === "unable_to_verify" ? "Some evidence cannot be verified" : "Information needs attention"}</h3>
+            <p>These suggestions do not approve, reject or guarantee a claim.</p>
+            {coachFindings(report, Number(claim.amount).toFixed(2)).map((finding, i) => <article className="coach-finding" key={i}>
+              <strong>{finding.title}</strong><p>{finding.evidence}</p><p><b>Next step:</b> {finding.next}</p>
+              {claim.claimant_id === user?.id && claim.status === "draft" && finding.action !== "review" && (finding.action === "edit" ? <Link href={`/claims/${claim.id}/edit`}>Edit claim details →</Link> : <a href="#supporting-documents">Update receipt files →</a>)}
+            </article>)}
+          </div>}
           <h3>
             {stale
               ? "Previous findings"

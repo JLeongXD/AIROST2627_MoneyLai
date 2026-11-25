@@ -144,6 +144,7 @@ export default function PresidentPage() {
             <select value={status} onChange={(e) => setStatus(e.target.value)}>
               <option value="">All statuses</option>
               <option value="submitted">Submitted</option>
+              <option value="needs_info">Needs information</option>
               <option value="approved">Approved</option>
               <option value="rejected">Rejected</option>
               <option value="paid">Reimbursed</option>

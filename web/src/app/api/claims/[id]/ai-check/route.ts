@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createHash } from "node:crypto";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import { checkSignature, compareClaim } from "@/lib/ai/claim-check";
 import { readReceipts } from "@/lib/ai/gemini";
@@ -38,7 +39,7 @@ export async function POST(
       .single();
     if (claimError || !claim)
       return json({ error: "Claim not found or access denied." }, 403);
-    if (!["draft", "submitted", "rejected"].includes(claim.status))
+    if (!["draft", "submitted", "needs_info", "rejected"].includes(claim.status))
       return json({ error: "AI checks are available before approval." }, 409);
     const { data: files, error: fileError } = await client
       .from("attachments")
@@ -129,13 +130,24 @@ export async function POST(
         );
       inputs.push({ id: f.id, mime: f.mime_type, bytes });
     }
+    const { data: activity, error: activityError } = await client.from("activities").select("name,description").eq("id", claim.activity_id).single();
+    if (activityError) throw new Error("Unable to read activity context.");
     const extracted = await readReceipts(
       key,
       model,
       claim.description,
       claim.category,
       inputs,
+      activity ?? undefined,
     );
+    const { error: indexError } = await admin.from("receipt_fingerprints").upsert(inputs.map((input) => {
+      const reading = extracted.receipts.find((r) => r.attachment_id === input.id)!;
+      return { attachment_id: input.id, sha256: createHash("sha256").update(input.bytes).digest("hex"),
+        merchant: reading.readable ? reading.merchant : null, amount: reading.readable ? reading.amount : null,
+        currency: reading.readable ? reading.currency : null, purchase_date: reading.readable ? reading.date : null,
+        receipt_number: reading.readable ? reading.receipt_number ?? null : null };
+    }), { onConflict: "attachment_id" });
+    if (indexError) throw new Error("Unable to save receipt comparison data. Check database setup.");
     const result = compareClaim(
       extracted,
       Number(claim.amount).toFixed(2),

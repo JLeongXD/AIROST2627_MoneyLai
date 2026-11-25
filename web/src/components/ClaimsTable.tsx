@@ -40,7 +40,7 @@ export default function ClaimsTable({
               <div className="ticket-top">
                 <div className="ticket-meta">
                   <small>ML / {c.id.slice(0, 6).toUpperCase()}</small>
-                  <StatusBadge status={c.status} />
+                  <StatusBadge status={c.info_requested_at ? "needs_info" : c.status} />
                 </div>
                 <h3>
                   <Link href={`/claims/${c.id}`}>
@@ -50,7 +50,7 @@ export default function ClaimsTable({
                 <p>{c.description}</p>
                 <strong className="ticket-amount">{money(c.amount)}</strong>
               </div>
-              <Journey status={c.status} compact />
+              <Journey status={c.info_requested_at ? "needs_info" : c.status} compact />
               <div className="ticket-footer">
                 <span>
                   {showClaimant
@@ -110,7 +110,7 @@ export default function ClaimsTable({
                   )}
                   <td className="amount-cell">{money(c.amount)}</td>
                   <td>
-                    <StatusBadge status={c.status} />
+                    <StatusBadge status={c.info_requested_at ? "needs_info" : c.status} />
                   </td>
                   <td className="date-cell">{dateTime(c.created_at)}</td>
                   <td>

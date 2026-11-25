@@ -46,6 +46,7 @@ test("All claim states have a user-facing label", () => {
   assert.deepEqual(Object.keys(STATUS_LABELS).sort(), [
     "approved",
     "draft",
+    "needs_info",
     "paid",
     "rejected",
     "submitted",

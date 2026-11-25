@@ -20,7 +20,7 @@ export function ClaimFeed({ claims }: { claims: Claim[] }) {
           <div>
             <strong>{money(c.amount)}</strong>
             <span className={`badge ${c.status}`}>
-              {STATUS_LABELS[c.status]}
+              {STATUS_LABELS[c.info_requested_at ? "needs_info" : c.status]}
             </span>
           </div>
         </Link>
@@ -31,6 +31,7 @@ export function ClaimFeed({ claims }: { claims: Claim[] }) {
 export function ClaimOverview({ claims }: { claims: Claim[] }) {
   const [selected, setSelected] = useState<ClaimStatus>("submitted");
   const statuses: ClaimStatus[] = [
+    "needs_info",
     "draft",
     "submitted",
     "approved",

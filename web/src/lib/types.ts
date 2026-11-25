@@ -1,6 +1,6 @@
 export type Role = "member" | "treasurer" | "president";
 export type ClaimStatus =
-  "draft" | "submitted" | "approved" | "rejected" | "paid";
+  "draft" | "submitted" | "needs_info" | "approved" | "rejected" | "paid";
 export type Money = number | string;
 export type Profile = { id: string; display_name: string; role: Role };
 export type Payout = {
@@ -32,6 +32,7 @@ export type Claim = {
   category: string;
   status: ClaimStatus;
   rejection_reason: string | null;
+  info_requested_at: string | null;
   submitted_at: string | null;
   created_at: string;
   updated_at: string;

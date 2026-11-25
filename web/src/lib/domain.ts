@@ -10,6 +10,7 @@ export const CATEGORIES = [
 export const STATUS_LABELS: Record<ClaimStatus, string> = {
   draft: "Draft",
   submitted: "Pending review",
+  needs_info: "Needs information",
   approved: "Awaiting payment",
   rejected: "Rejected",
   paid: "Reimbursed",
