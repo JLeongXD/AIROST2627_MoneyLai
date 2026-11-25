@@ -1,7 +1,9 @@
 "use client";
 import Link from "next/link";
+import { Journey } from "@/components/Creative";
+import ReceiptPreview from "@/components/ReceiptPreview";
 import { useParams, useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import {
   PageHeader,
@@ -30,6 +32,24 @@ import AIClaimCheck from "@/components/AIClaimCheck";
 
 export default function ClaimDetailPage() {
   const { id } = useParams<{ id: string }>();
+  return <ClaimDetailWorkspace key={id} claimId={id} />;
+}
+export function ClaimDetailWorkspace({
+  claimId: id,
+  onChanged,
+}: {
+  claimId: string;
+  onChanged?: () => void;
+}) {
+  const [flowStep, setFlowStep] = useState(0);
+  useEffect(() => {
+    setFlowStep(
+      !onChanged &&
+        new URLSearchParams(window.location.search).get("flow") === "receipt"
+        ? 3
+        : 0,
+    );
+  }, [id]);
   const { user, profile } = useAuth();
   const router = useRouter();
   const [busy, setBusy] = useState(false);
@@ -68,6 +88,7 @@ export default function ClaimDetailPage() {
       setMessage(success);
       setReason("");
       state.reload();
+      onChanged?.();
     } catch (e) {
       setError(errorMessage(e));
     } finally {
@@ -81,8 +102,77 @@ export default function ClaimDetailPage() {
   const owner = claim.claimant_id === user?.id;
   const fiscal = profile?.role === "treasurer";
   const canReview = fiscal && !owner;
+  const flow = owner && claim.status === "draft" && flowStep > 0;
   return (
-    <>
+    <div className={flow ? `claim-flow flow-${flowStep}` : "claim-document"}>
+      {flow && (
+        <>
+          <ol className="wizard-steps" aria-label="Claim submission steps">
+            {[
+              "Activity",
+              "Expense details",
+              "Receipt",
+              "AI check",
+              "Review & submit",
+            ].map((s, i) => (
+              <li
+                className={
+                  flowStep === i + 1
+                    ? "current"
+                    : flowStep > i + 1
+                      ? "done"
+                      : ""
+                }
+                aria-current={flowStep === i + 1 ? "step" : undefined}
+                key={s}
+              >
+                <span>{i + 1}</span>
+                {s}
+              </li>
+            ))}
+          </ol>
+          <div className="flow-controls">
+            <p>
+              {flowStep === 3
+                ? "Upload at least one receipt. Your draft is saved."
+                : flowStep === 4
+                  ? "Check the receipt with AI, or continue with manual review."
+                  : "Review the details below, then Submit for review."}
+            </p>
+            <div className="form-actions">
+              {flowStep > 3 ? (
+                <button
+                  className="button secondary"
+                  onClick={() => setFlowStep((s) => s - 1)}
+                >
+                  Back
+                </button>
+              ) : (
+                <Link className="button secondary" href={`/claims/${id}/edit`}>
+                  Edit expense
+                </Link>
+              )}
+              {flowStep < 5 && (
+                <button
+                  className="button primary"
+                  disabled={
+                    flowStep === 3 &&
+                    !attachments.some((a) => a.kind === "receipt")
+                  }
+                  onClick={() => setFlowStep((s) => s + 1)}
+                >
+                  {flowStep === 4
+                    ? "Continue to review →"
+                    : "Continue to AI check →"}
+                </button>
+              )}
+              <button className="text-button" onClick={() => setFlowStep(0)}>
+                View full claim
+              </button>
+            </div>
+          </div>
+        </>
+      )}
       <PageHeader
         eyebrow={`CLAIM ${id.slice(0, 8).toUpperCase()}`}
         title={claim.activity?.name ?? "Expense claim"}
@@ -98,11 +188,24 @@ export default function ClaimDetailPage() {
       />
       {error && <Notice tone="error">{error}</Notice>}
       {message && <Notice tone="success">{message}</Notice>}
-      <AIClaimCheck
-        claim={claim}
-        attachments={attachments}
-        onChanged={state.reload}
-      />
+      <section className="panel">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">EVERY STEP ACCOUNTED FOR</span>
+            <h2>Your claim journey</h2>
+          </div>
+          <StatusBadge status={claim.status} />
+        </div>
+        <Journey status={claim.status} />
+      </section>
+      <div className="ai-split">
+        <ReceiptPreview attachments={attachments} />
+        <AIClaimCheck
+          claim={claim}
+          attachments={attachments}
+          onChanged={state.reload}
+        />
+      </div>
       <div className="detail-grid">
         <div>
           <section className="panel">
@@ -261,6 +364,27 @@ export default function ClaimDetailPage() {
             {owner && claim.status === "draft" && attachments.length < 5 && (
               <form
                 className="upload-box"
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.add("drag-over");
+                }}
+                onDragLeave={(e) =>
+                  e.currentTarget.classList.remove("drag-over")
+                }
+                onDrop={(e) => {
+                  e.preventDefault();
+                  e.currentTarget.classList.remove("drag-over");
+                  if (busy) return;
+                  const dropped = e.dataTransfer.files[0];
+                  if (!dropped) return;
+                  const issue = fileError(dropped);
+                  if (issue) {
+                    setError(issue);
+                    return;
+                  }
+                  setFile(dropped);
+                  setError("");
+                }}
                 onSubmit={(e) => {
                   e.preventDefault();
                   if (!file) {
@@ -274,6 +398,10 @@ export default function ClaimDetailPage() {
                   }, "File uploaded.");
                 }}
               >
+                <p className="drop-hint">
+                  Drop a receipt here, or choose a file below.{" "}
+                  {file ? `Selected: ${file.name}` : ""}
+                </p>
                 <fieldset disabled={busy}>
                   <Field label="Document type" id="file-kind">
                     <select
@@ -424,7 +552,10 @@ export default function ClaimDetailPage() {
               <PaymentForm
                 claim={claim}
                 payout={payout}
-                onDone={state.reload}
+                onDone={() => {
+                  state.reload();
+                  onChanged?.();
+                }}
               />
               <section className="panel">
                 <h3>Need another review?</h3>
@@ -498,7 +629,7 @@ export default function ClaimDetailPage() {
           )}
         </aside>
       </div>
-    </>
+    </div>
   );
 }
 

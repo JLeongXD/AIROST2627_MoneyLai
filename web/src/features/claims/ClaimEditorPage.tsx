@@ -65,7 +65,7 @@ export default function ClaimEditorPage({ edit = false }: { edit?: boolean }) {
     </>
   );
 }
-function ClaimForm({
+export function ClaimForm({
   claim,
   activities,
   initialActivity,
@@ -75,6 +75,7 @@ function ClaimForm({
   initialActivity: string;
 }) {
   const router = useRouter();
+  const [step, setStep] = useState(claim ? 2 : 1);
   const [activityId, setActivityId] = useState(
     claim?.activity_id ?? initialActivity,
   );
@@ -91,6 +92,14 @@ function ClaimForm({
     e.preventDefault();
     if (busy) return;
     setError("");
+    if (step === 1) {
+      if (selected?.status !== "active") {
+        setError("Choose an active activity to continue.");
+        return;
+      }
+      setStep(2);
+      return;
+    }
     const amountIssue = amountError(amount);
     if (amountIssue) {
       setError(amountIssue);
@@ -116,142 +125,186 @@ function ClaimForm({
         p_purchase_date: purchaseDate,
         p_category: category,
       });
-      router.push(`/claims/${id}`);
+      router.push(`/claims/${id}?flow=receipt`);
     } catch (e) {
       setError(errorMessage(e));
       setBusy(false);
     }
   }
   return (
-    <div className="detail-grid">
-      <section className="panel">
-        <h2>Expense details</h2>
-        <p className="muted">All fields below are required for this draft.</p>
-        {error && <Notice tone="error">{error}</Notice>}
-        <form onSubmit={save} noValidate>
-          <fieldset disabled={busy}>
-            <Field
-              label="Activity"
-              id="activity"
-              hint={
-                claim
-                  ? "The activity is fixed after a claim is created."
-                  : undefined
-              }
-            >
-              <select
-                id="activity"
-                value={activityId}
-                onChange={(e) => setActivityId(e.target.value)}
-                disabled={Boolean(claim)}
-              >
-                <option value="">Choose an activity</option>
-                {activities
-                  .filter(
-                    (a) => a.status === "active" || a.id === claim?.activity_id,
-                  )
-                  .map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.name}
-                      {a.status === "closed" ? " (closed)" : ""}
-                    </option>
-                  ))}
-              </select>
-            </Field>
-            <div className="form-grid">
-              <Field label="Amount (RM)" id="amount">
-                <input
-                  id="amount"
-                  inputMode="decimal"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  placeholder="0.00"
-                  maxLength={13}
-                />
-              </Field>
-              <Field label="Purchase date" id="purchase-date">
-                <input
-                  id="purchase-date"
-                  type="date"
-                  max={today()}
-                  value={purchaseDate}
-                  onChange={(e) => setPurchaseDate(e.target.value)}
-                />
-              </Field>
-            </div>
-            <Field label="Category" id="category">
-              <select
-                id="category"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                {CATEGORIES.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-            </Field>
-            <Field
-              label="Description"
-              id="description"
-              hint={`${description.length}/500 characters · tell your treasurer what the expense was for.`}
-            >
-              <textarea
-                id="description"
-                rows={4}
-                maxLength={500}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g. Electronic components for the robotics workshop"
-              />
-            </Field>
-            <div className="form-actions">
-              <button
-                className="button primary"
-                disabled={selected?.status !== "active"}
-              >
-                {busy
-                  ? "Saving…"
-                  : claim
-                    ? "Save changes"
-                    : "Save draft & add receipts →"}
-              </button>
-              <Link
-                href={claim ? `/claims/${claim.id}` : "/claims"}
-                className="button secondary"
-              >
-                Cancel
-              </Link>
-            </div>
-          </fieldset>
-        </form>
-      </section>
-      <aside>
-        <div className="panel guidance">
-          <span className="eyebrow">BEFORE YOU SUBMIT</span>
-          <h2>A clear claim is a quicker claim.</h2>
-          <ol>
-            <li>Choose the right activity.</li>
-            <li>Enter the amount you actually paid.</li>
-            <li>Save, then upload your receipt.</li>
-            <li>Check your payout details in Profile.</li>
-          </ol>
-          {selected && (
-            <div className="budget-summary">
-              <span>Activity available budget</span>
-              <strong>{money(selected.remaining_budget)}</strong>
-              <small>
-                Pending claims do not reserve budget. Approval does.
-              </small>
-            </div>
-          )}
-          {selected && Number(amount) > Number(selected.remaining_budget) && (
-            <Notice>
-              This amount exceeds the current available budget. The treasurer
-              will need to resolve the budget before approval.
-            </Notice>
-          )}
-        </div>
-      </aside>
-    </div>
+    <>
+      <ol className="wizard-steps" aria-label="Claim submission steps">
+        {[
+          "Activity",
+          "Expense details",
+          "Receipt",
+          "AI check",
+          "Review & submit",
+        ].map((label, i) => (
+          <li
+            className={step === i + 1 ? "current" : step > i + 1 ? "done" : ""}
+            key={label}
+            aria-current={step === i + 1 ? "step" : undefined}
+          >
+            <span>{String(i + 1).padStart(2, "0")}</span>
+            {label}
+          </li>
+        ))}
+      </ol>
+      <div className="detail-grid claim-wizard">
+        <section className="panel">
+          <span className="eyebrow">STEP {step} OF 5</span>
+          <h2>
+            {step === 1
+              ? "What’s the occasion?"
+              : "A few details. A clearer claim."}
+          </h2>
+          <p className="muted">
+            Complete this step, then add your supporting receipt.
+          </p>
+          {error && <Notice tone="error">{error}</Notice>}
+          <form onSubmit={save} noValidate>
+            <fieldset disabled={busy}>
+              <div hidden={step !== 1}>
+                <Field
+                  label="Activity"
+                  id="activity"
+                  hint={
+                    claim
+                      ? "The activity is fixed after a claim is created."
+                      : undefined
+                  }
+                >
+                  <select
+                    id="activity"
+                    value={activityId}
+                    onChange={(e) => setActivityId(e.target.value)}
+                    disabled={Boolean(claim)}
+                  >
+                    <option value="">Choose an activity</option>
+                    {activities
+                      .filter(
+                        (a) =>
+                          a.status === "active" || a.id === claim?.activity_id,
+                      )
+                      .map((a) => (
+                        <option key={a.id} value={a.id}>
+                          {a.name}
+                          {a.status === "closed" ? " (closed)" : ""}
+                        </option>
+                      ))}
+                  </select>
+                </Field>
+              </div>
+              <div hidden={step !== 2}>
+                <div className="form-grid">
+                  <Field label="Amount (RM)" id="amount">
+                    <input
+                      id="amount"
+                      inputMode="decimal"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      maxLength={13}
+                    />
+                  </Field>
+                  <Field label="Purchase date" id="purchase-date">
+                    <input
+                      id="purchase-date"
+                      type="date"
+                      max={today()}
+                      value={purchaseDate}
+                      onChange={(e) => setPurchaseDate(e.target.value)}
+                    />
+                  </Field>
+                </div>
+                <Field label="Category" id="category">
+                  <select
+                    id="category"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c}>{c}</option>
+                    ))}
+                  </select>
+                </Field>
+                <Field
+                  label="Description"
+                  id="description"
+                  hint={`${description.length}/500 characters · tell your treasurer what the expense was for.`}
+                >
+                  <textarea
+                    id="description"
+                    rows={4}
+                    maxLength={500}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="e.g. Electronic components for the robotics workshop"
+                  />
+                </Field>
+              </div>
+              <div className="form-actions">
+                {step === 2 && (
+                  <button
+                    type="button"
+                    className="button secondary"
+                    onClick={() => {
+                      setStep(1);
+                      setError("");
+                    }}
+                  >
+                    Back
+                  </button>
+                )}
+                <button
+                  className="button primary"
+                  disabled={selected?.status !== "active"}
+                >
+                  {busy
+                    ? "Saving…"
+                    : step === 1
+                      ? "Continue to details →"
+                      : "Save draft & continue →"}
+                </button>
+                <Link
+                  href={claim ? `/claims/${claim.id}` : "/claims"}
+                  className="button secondary"
+                >
+                  Cancel
+                </Link>
+              </div>
+            </fieldset>
+          </form>
+        </section>
+        <aside>
+          <div className="panel guidance">
+            <span className="eyebrow">BEFORE YOU SUBMIT</span>
+            <h2>A clear claim is a quicker claim.</h2>
+            <ol>
+              <li>Choose the right activity.</li>
+              <li>Enter the amount you actually paid.</li>
+              <li>Save, then upload your receipt.</li>
+              <li>Check your payout details in Profile.</li>
+            </ol>
+            {selected && (
+              <div className="budget-summary">
+                <span>Activity available budget</span>
+                <strong>{money(selected.remaining_budget)}</strong>
+                <small>
+                  Pending claims do not reserve budget. Approval does.
+                </small>
+              </div>
+            )}
+            {selected && Number(amount) > Number(selected.remaining_budget) && (
+              <Notice>
+                This amount exceeds the current available budget. The treasurer
+                will need to resolve the budget before approval.
+              </Notice>
+            )}
+          </div>
+        </aside>
+      </div>
+    </>
   );
 }

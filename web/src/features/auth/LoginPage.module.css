@@ -2,7 +2,7 @@
   min-height: 100svh;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: #fafbf8;
+  background: #f4f6f2;
 }
 .story {
   position: relative;
@@ -12,7 +12,7 @@
   justify-content: space-between;
   padding: 42px clamp(32px, 5vw, 80px) 30px;
   color: #fff;
-  background: #123e35;
+  background: #103d35;
 }
 .story::after {
   content: "";
@@ -48,14 +48,14 @@
   width: 36px;
   height: 36px;
   border-radius: 11px;
-  background: #d4ed9b;
-  color: #123e35;
+  background: #d6ad65;
+  color: #103d35;
   font-size: 22px;
   letter-spacing: -2px;
   padding-right: 2px;
 }
 .brandDot {
-  color: #d4ed9b;
+  color: #d6ad65;
   margin-left: -10px;
 }
 .storyContent {
@@ -71,7 +71,7 @@
   letter-spacing: 2px;
 }
 .eyebrow {
-  color: #d4ed9b;
+  color: #d6ad65;
   margin-bottom: 22px;
 }
 .story h1 {
@@ -82,7 +82,7 @@
   margin-bottom: 22px;
 }
 .story h1 span {
-  color: #d4ed9b;
+  color: #d6ad65;
 }
 .storyContent > p {
   max-width: 410px;
@@ -110,7 +110,7 @@
 .workflowHeader > span:last-child {
   font-size: 19px;
   line-height: 1;
-  color: #d4ed9b;
+  color: #d6ad65;
 }
 .workflow ol {
   list-style: none;
@@ -142,7 +142,7 @@
   place-items: center;
   border: 1px solid #ffffff30;
   border-radius: 50%;
-  color: #d4ed9b;
+  color: #d6ad65;
   font-size: 12px;
 }
 .workflow strong {
@@ -241,21 +241,21 @@
 .submit {
   width: 100%;
   min-height: 54px;
-  border: 1px solid #123e35;
+  border: 1px solid #103d35;
   border-radius: 9px;
-  background: #123e35;
+  background: #103d35;
   color: #fff;
   font-size: 16px;
   font-weight: 600;
   margin-top: 5px;
-  box-shadow: 0 4px 9px #123e3512;
+  box-shadow: 0 4px 9px #103d3512;
   transition:
     background 150ms,
     box-shadow 150ms;
 }
 .submit:hover:not(:disabled) {
   background: #1e5748;
-  box-shadow: 0 5px 14px #123e3525;
+  box-shadow: 0 5px 14px #103d3525;
 }
 .switchButton {
   display: block;

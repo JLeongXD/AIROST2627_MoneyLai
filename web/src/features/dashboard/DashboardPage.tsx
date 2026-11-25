@@ -10,163 +10,138 @@ import {
   Loading,
   EmptyState,
 } from "@/components/UI";
-import ClaimsTable from "@/components/ClaimsTable";
+import { WorkspaceHero, BudgetExplorer } from "@/components/Creative";
+import { ClaimFeed, ClaimOverview } from "@/components/FinanceViews";
 import { useLoad } from "@/lib/useLoad";
 import { listActivities, listClaims } from "@/lib/api";
 import { money } from "@/lib/domain";
 export default function DashboardPage() {
   const { user, profile } = useAuth();
   const router = useRouter();
-  const president = profile?.role === "president";
+  const president = profile?.role === "president",
+    fiscal = profile?.role === "treasurer";
   useEffect(() => {
     if (president) router.replace("/president");
   }, [president, router]);
-  const treasurer = profile?.role === "treasurer";
-  const { data, error, loading } = useLoad(async () => {
+  const state = useLoad(async () => {
     if (president) return { activities: [], claims: [] };
     const [activities, claims] = await Promise.all([
       listActivities(),
-      listClaims(treasurer ? undefined : user!.id),
+      listClaims(fiscal ? undefined : user!.id),
     ]);
     return { activities, claims };
-  }, [user?.id, treasurer, president]);
-  if (president || loading) return <Loading />;
-  if (error) return <Notice tone="error">{error}</Notice>;
-  if (!data) return null;
-  const { claims, activities } = data;
-  const total = (values: (number | string)[]) =>
-    values.reduce<number>((sum, v) => sum + Math.round(Number(v) * 100), 0) /
-    100;
-  const pending = claims.filter((c) => c.status === "submitted");
-  const unpaid = claims.filter((c) => c.status === "approved");
-  const paid = claims.filter((c) => c.status === "paid");
+  }, [user?.id, fiscal, president]);
+  if (president || state.loading) return <Loading />;
+  if (state.error) return <Notice tone="error">{state.error}</Notice>;
+  if (!state.data) return null;
+  const { activities, claims } = state.data,
+    pending = claims.filter((c) => c.status === "submitted"),
+    approved = claims.filter((c) => c.status === "approved"),
+    paid = claims.filter((c) => c.status === "paid");
+  const sum = (arr: { amount: number | string }[]) =>
+    arr.reduce((n, c) => n + Math.round(Number(c.amount) * 100), 0) / 100;
   return (
     <>
       <PageHeader
-        eyebrow="YOUR FINANCIAL SNAPSHOT"
-        title={`Hello, ${profile?.display_name.split(" ")[0]}.`}
+        eyebrow={fiscal ? "FINANCE CONTROL CENTER" : "YOUR PERSONAL WORKSPACE"}
+        title={
+          fiscal
+            ? "A clear view. A lighter workload."
+            : `Welcome back, ${profile?.display_name.split(" ")[0]}.`
+        }
         description={
-          treasurer
-            ? "A clear view of your club’s budgets, reviews and reimbursements."
-            : "Everything you need to keep your expenses moving."
+          fiscal
+            ? "Review the evidence. Keep reimbursements moving."
+            : "Your expenses, your progress. All in a good place."
         }
         action={
-          <Link href="/claims/new" className="button primary">
-            + New claim
+          <Link
+            className="button primary"
+            href={fiscal ? "/treasury" : "/claims/new"}
+          >
+            {fiscal ? "Open review desk" : "+ Submit a claim"}
           </Link>
         }
       />
+      <WorkspaceHero
+        name={profile?.display_name.split(" ")[0] ?? "friend"}
+        treasurer={fiscal}
+        count={pending.filter((c) => c.claimant_id !== user?.id).length}
+        amount={sum(approved)}
+      />
       <div className="stats-grid">
         <StatCard
-          label={
-            treasurer ? "Available club budget" : "Awaiting my reimbursement"
-          }
-          value={money(
-            treasurer
-              ? total(
-                  activities
-                    .filter((a) => a.status === "active")
-                    .map((a) => a.remaining_budget),
-                )
-              : total(unpaid.map((c) => c.amount)),
-          )}
-          note={
-            treasurer
-              ? "Active activities · after approvals"
-              : "Approved, not yet paid"
-          }
+          label={fiscal ? "Loaded club claims" : "My claims"}
+          value={String(claims.length)}
+          note="Up to 500 recent records"
         />
         <StatCard
           label="Pending review"
           value={String(pending.length)}
-          note={`${money(total(pending.map((c) => c.amount)))} awaiting a decision`}
+          note={`${money(sum(pending))} awaiting review`}
         />
         <StatCard
-          label={treasurer ? "Ready for payment" : "Reimbursed to me"}
-          value={money(total((treasurer ? unpaid : paid).map((c) => c.amount)))}
-          note={
-            treasurer
-              ? `${unpaid.length} approved claims`
-              : `${paid.length} completed claims`
-          }
+          label="Awaiting payment"
+          value={money(sum(approved))}
+          note={`${approved.length} approved claims`}
         />
         <StatCard
-          label="Active activities"
-          value={String(activities.filter((a) => a.status === "active").length)}
-          note="Plan, spend and stay on track"
+          label="Reimbursed"
+          value={money(sum(paid))}
+          note={`${paid.length} completed claims`}
         />
       </div>
-      <div className="dashboard-grid">
-        <section className="panel">
-          <div className="section-heading">
-            <div>
-              <span className="eyebrow">AT A GLANCE</span>
-              <h2>Activity budgets</h2>
-            </div>
-            <Link href="/activities">View all ↗</Link>
-          </div>
-          {activities
-            .filter((a) => a.status === "active")
-            .slice(0, 4)
-            .map((a) => (
-              <div className="budget-row" key={a.id}>
-                <div>
-                  <strong>{a.name}</strong>
-                  <span>{money(a.remaining_budget)} left</span>
-                </div>
-                <progress
-                  aria-label={`${a.name} approved budget usage`}
-                  value={Number(a.approved_spend)}
-                  max={Math.max(Number(a.budget), 1)}
-                />
-                <small>
-                  {money(a.approved_spend)} of {money(a.budget)} approved
-                </small>
-              </div>
-            ))}
-          {!activities.some((a) => a.status === "active") && (
-            <p className="muted">No active activities yet.</p>
-          )}
-        </section>
-        <section className="panel action-panel">
-          <span className="eyebrow">YOUR NEXT STEP</span>
+      <div className="bento-grid">
+        <BudgetExplorer
+          activities={activities.filter((a) => a.status === "active")}
+        />
+        <section className="panel editorial-note">
+          <span className="eyebrow">A CLEAR CLAIM GOES FURTHER</span>
+          <span className="editorial-star" aria-hidden="true">
+            ✳
+          </span>
           <h2>
-            {treasurer
-              ? "Keep things moving."
-              : "A receipt today. Less chasing tomorrow."}
+            Every receipt.
+            <br />
+            <em>One less worry.</em>
           </h2>
           <p>
-            {treasurer
-              ? "Review submitted claims, then record payments once the transfer is complete."
-              : "Save your expense, attach the receipt and submit it for review. You can follow every step here."}
+            Attach your receipt, check the details with AI, then send it for a
+            human review.
           </p>
           <Link
             className="button secondary"
-            href={treasurer ? "/treasury" : "/claims/new"}
+            href={fiscal ? "/treasury" : "/claims/new"}
           >
-            {treasurer ? "Open treasury →" : "Start a claim →"}
+            {fiscal ? "Review a claim" : "Start a claim"} ↗
           </Link>
           <Link className="text-button" href="/profile">
             Check payout details
           </Link>
         </section>
       </div>
-      <section className="panel">
-        <div className="section-heading">
-          <h2>{treasurer ? "Recent club claims" : "Recent claims"}</h2>
-          <Link href={treasurer ? "/treasury" : "/claims"}>View all ↗</Link>
-        </div>
-        {claims.length ? (
-          <ClaimsTable claims={claims.slice(0, 5)} showClaimant={treasurer} />
-        ) : (
-          <EmptyState
-            title="A fresh start"
-            description="Your claims will appear here."
-            href="/claims/new"
-            label="Create a claim"
-          />
-        )}
-      </section>
+      <div className="bento-grid">
+        <section className="panel">
+          <div className="section-heading">
+            <div>
+              <span className="eyebrow">THE LATEST CHAPTER</span>
+              <h2>{fiscal ? "Recent club claims" : "Your recent claims"}</h2>
+            </div>
+            <Link href={fiscal ? "/treasury" : "/claims"}>View all ↗</Link>
+          </div>
+          {claims.length ? (
+            <ClaimFeed claims={claims.slice(0, 5)} />
+          ) : (
+            <EmptyState
+              title="Your first chapter starts here"
+              description="Save an expense and add its receipt."
+              href="/claims/new"
+              label="Create a claim"
+            />
+          )}
+        </section>
+        <ClaimOverview claims={claims} />
+      </div>
     </>
   );
 }

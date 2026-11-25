@@ -1,5 +1,7 @@
 "use client";
 import { useState } from "react";
+import { BudgetExplorer } from "@/components/Creative";
+import { ExecutiveSummary, ClaimTrend } from "@/components/FinanceViews";
 import BudgetRequests from "@/components/BudgetRequests";
 import { useAuth } from "@/components/AuthProvider";
 import { Loading, Notice, PageHeader, StatCard } from "@/components/UI";
@@ -57,7 +59,7 @@ export default function PresidentPage() {
     <div className={styles.page}>
       <PageHeader
         eyebrow="THE BIG PICTURE"
-        title="President overview"
+        title="Every decision starts with clarity."
         description="A clear view of club budgets, expenses and reimbursement progress."
         action={
           <button className="button secondary" onClick={state.reload}>
@@ -69,28 +71,29 @@ export default function PresidentPage() {
         Approve activity budgets here. Treasurer handles claim review and
         payments. Allocated budgets do not represent your club’s bank balance.
       </Notice>
+      <ExecutiveSummary activities={activities} />
+      <BudgetExplorer activities={activities} />
       <BudgetRequests onChanged={state.reload} />
-      <div className="stats-grid">
-        <StatCard
-          label="Total activity budgets"
-          value={money(total("budget"))}
-          note="All active and closed activities"
-        />
-        <StatCard
-          label="Approved expenditure"
-          value={money(total("approved_spend"))}
-          note="Approved and reimbursed claims"
-        />
-        <StatCard
-          label="Remaining budget"
-          value={money(total("remaining_budget"))}
-          note="Allocation minus approved expenditure"
-        />
-        <StatCard
-          label="Awaiting payment"
-          value={money(total("unpaid_amount"))}
-          note="Approved, not yet reimbursed"
-        />
+      <div className="executive-strip">
+        <div>
+          <small>Approved expenditure</small>
+          <strong>{money(total("approved_spend"))}</strong>
+        </div>
+        <div>
+          <small>Awaiting payment</small>
+          <strong>{money(total("unpaid_amount"))}</strong>
+        </div>
+        <div>
+          <small>Pending review value</small>
+          <strong>
+            {money(
+              activities.reduce(
+                (n, a) => n + Math.round(Number(a.pending_amount) * 100),
+                0,
+              ) / 100,
+            )}
+          </strong>
+        </div>
       </div>
       {alerts.length > 0 && (
         <Notice>
@@ -98,59 +101,7 @@ export default function PresidentPage() {
           the allocated budget is committed.
         </Notice>
       )}
-      <section className="panel">
-        <div className="section-heading">
-          <div>
-            <span className="eyebrow">PLAN WITH CLARITY</span>
-            <h2>Activity budgets</h2>
-          </div>
-        </div>
-        {activities.length === 0 ? (
-          <p>
-            No activities yet. Budgets will appear when Treasurer creates an
-            activity.
-          </p>
-        ) : (
-          <div className={styles.budgets}>
-            {activities.map((a) => {
-              const budget = Number(a.budget);
-              const spent = Number(a.approved_spend);
-              return (
-                <article key={a.id} className={styles.budgetCard}>
-                  <div className={styles.cardHeading}>
-                    <h3>{a.name}</h3>
-                    <span>{a.status === "active" ? "Active" : "Closed"}</span>
-                  </div>
-                  <p>
-                    <strong>{money(a.remaining_budget)}</strong> remaining
-                  </p>
-                  <progress
-                    value={spent}
-                    max={Math.max(budget, 1)}
-                    aria-label={`${a.name} approved budget usage`}
-                  />
-                  <p className={styles.caption}>
-                    {money(spent)} of {money(budget)} committed{" "}
-                    {budget > 0
-                      ? `(${Math.round((spent / budget) * 100)}%)`
-                      : "(no budget allocated)"}
-                  </p>
-                  <dl>
-                    <div>
-                      <dt>Pending review</dt>
-                      <dd>{money(a.pending_amount)}</dd>
-                    </div>
-                    <div>
-                      <dt>Reimbursed</dt>
-                      <dd>{money(a.paid_amount)}</dd>
-                    </div>
-                  </dl>
-                </article>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      <ClaimTrend claims={claims} />
       <section className="panel">
         <div className="section-heading">
           <div>

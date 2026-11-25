@@ -75,7 +75,26 @@ export default function AIClaimCheck({
   return (
     <section className={`panel ${styles.panel}`}>
       <span className="eyebrow">GEMINI ASSISTED REVIEW</span>
-      <h2>AI Claim Check</h2>
+      <h2>Receipt intelligence.</h2>
+      <div className="ai-workspace-steps" aria-label="AI check steps">
+        <span
+          className={
+            attachments.some((a) => a.kind === "receipt") ? "active" : ""
+          }
+        >
+          01 / Attach receipts
+        </span>
+        <span className={busy ? "active" : ""}>02 / Analyse</span>
+        <span className={report && !stale ? "active" : ""}>
+          03 / Review findings
+        </span>
+      </div>
+      {busy && (
+        <div className="ai-working" role="status">
+          <span className="spinner" />
+          Reading receipt data and comparing your claim…
+        </div>
+      )}
       <p>
         Check receipt totals, dates and whether the purpose needs clarification.
         AI findings are suggestions; Treasurer makes the final decision.

@@ -70,7 +70,7 @@ function ProfileForm({ payout }: { payout: Payout | null }) {
     }
   }
   return (
-    <div className="detail-grid">
+    <div className="detail-grid profile-workspace">
       <section className="panel">
         <h2>Personal & payout details</h2>
         {error && <Notice tone="error">{error}</Notice>}

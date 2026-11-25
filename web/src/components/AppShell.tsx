@@ -5,10 +5,120 @@ import { useEffect, useState, type ReactNode } from "react";
 import { useAuth } from "./AuthProvider";
 import { createClient } from "@/lib/supabase/client";
 import { errorMessage } from "@/lib/domain";
+import type { Profile } from "@/lib/types";
+import { Icon } from "./Creative";
+export function WorkspaceFrame({
+  profile,
+  children,
+  onSignOut,
+  signingOut = false,
+}: {
+  profile: Profile;
+  children: ReactNode;
+  onSignOut: () => void;
+  signingOut?: boolean;
+}) {
+  const path = usePathname();
+  const role = {
+    member: "Member",
+    treasurer: "Treasurer",
+    president: "President",
+  }[profile.role];
+  const links = [
+    {
+      href: profile.role === "president" ? "/president" : "/dashboard",
+      label: "Overview",
+      icon: "grid",
+    },
+    { href: "/claims", label: "My claims", icon: "receipt" },
+    ...(profile.role === "treasurer"
+      ? [{ href: "/treasury", label: "Review desk", icon: "wallet" }]
+      : []),
+    { href: "/activities", label: "Activities", icon: "activity" },
+    { href: "/profile", label: "Profile", icon: "user" },
+  ];
+  return (
+    <div className="hybrid-app">
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+      <header className="global-nav">
+        <div className="nav-inner">
+          <Link className="hybrid-brand" href={links[0].href}>
+            <span>M</span>MoneyLai<i>.</i>
+          </Link>
+          <nav className="desktop-nav" aria-label="Main navigation">
+            {links.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                aria-current={
+                  path === l.href || path.startsWith(l.href + "/")
+                    ? "page"
+                    : undefined
+                }
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+          <div className="nav-account">
+            <span className="role-pill">{role}</span>
+            <details className="profile-menu">
+              <summary aria-label="Account menu">
+                <span className="profile-avatar">
+                  {profile.display_name.slice(0, 1).toUpperCase()}
+                </span>
+                <span className="profile-name">
+                  {profile.display_name.split(" ")[0]}
+                </span>
+                <span>⌄</span>
+              </summary>
+              <div className="profile-popover">
+                <strong>{profile.display_name}</strong>
+                <small>{role} workspace</small>
+                <Link href="/profile">Profile & payout details</Link>
+                <button disabled={signingOut} onClick={onSignOut}>
+                  {signingOut ? "Signing out…" : "Sign out"}
+                </button>
+              </div>
+            </details>
+          </div>
+        </div>
+      </header>
+      <div className="workspace-context">
+        <span>Club Finance, Simplified.</span>
+        <span>Every Ringgit. Every Receipt. Every Decision.</span>
+      </div>
+      <main id="main-content" className="page-content hybrid-content">
+        {children}
+      </main>
+      <footer className="hybrid-footer">
+        <span>MoneyLai © {new Date().getFullYear()}</span>
+        <span>A little clarity for every club expense.</span>
+      </footer>
+      <nav className="bottom-nav" aria-label="Mobile navigation">
+        {links.map((l) => (
+          <Link
+            key={l.href}
+            href={l.href}
+            aria-current={
+              path === l.href || path.startsWith(l.href + "/")
+                ? "page"
+                : undefined
+            }
+          >
+            <Icon name={l.icon} size={20} />
+            <span>{l.label}</span>
+          </Link>
+        ))}
+      </nav>
+    </div>
+  );
+}
 export default function AppShell({ children }: { children: ReactNode }) {
   const { user, profile, ready, error } = useAuth();
   const router = useRouter();
-  const path = usePathname();
   const [signingOut, setSigningOut] = useState(false);
   const [message, setMessage] = useState("");
   useEffect(() => {
@@ -29,7 +139,7 @@ export default function AppShell({ children }: { children: ReactNode }) {
   }
   if (!ready)
     return (
-      <div className="loading-screen">
+      <div className="loading-screen" role="status">
         <span className="spinner" />
         Opening MoneyLai…
       </div>
@@ -43,87 +153,18 @@ export default function AppShell({ children }: { children: ReactNode }) {
         {user && <button onClick={signOut}>Sign out</button>}
       </main>
     );
-  const roleLabel = {
-    member: "Club member",
-    treasurer: "Treasurer",
-    president: "President",
-  }[profile.role];
-  const links = [
-    { href: "/dashboard", label: "Overview", icon: "◈" },
-    { href: "/claims", label: "My claims", icon: "▤" },
-    { href: "/activities", label: "Activities", icon: "▦" },
-    ...(profile.role === "treasurer"
-      ? [{ href: "/treasury", label: "Treasury", icon: "◎" }]
-      : []),
-    { href: "/profile", label: "My profile", icon: "◉" },
-  ];
   return (
-    <div className="app-layout">
-      <aside className="sidebar">
-        <Link href="/dashboard" className="brand">
-          <span className="brand-mark">M</span>MoneyLai
-          <span className="brand-dot">.</span>
-        </Link>
-        <span className="nav-label">CLUB FINANCE, SIMPLIFIED</span>
-        <nav aria-label="Main navigation">
-          {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={
-                path === link.href || path.startsWith(link.href + "/")
-                  ? "page"
-                  : undefined
-              }
-              className={`nav-item ${path === link.href || path.startsWith(link.href + "/") ? "active" : ""}`}
-            >
-              <span aria-hidden>{link.icon}</span>
-              {link.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="sidebar-note">
-          <span>ONE LESS THING TO CHASE</span>
-          <p>
-            Clear budgets.
-            <br />
-            Every claim accounted for.
-          </p>
-        </div>
-        <div className="account">
-          <span className="avatar">
-            {profile.display_name.slice(0, 1).toUpperCase()}
-          </span>
-          <div>
-            <strong>{profile.display_name}</strong>
-            <small>{roleLabel}</small>
-          </div>
-          <button
-            className="icon-button"
-            onClick={signOut}
-            disabled={signingOut}
-            aria-label="Sign out"
-            title="Sign out"
-          >
-            ↗
-          </button>
-        </div>
-      </aside>
-      <div className="workspace">
-        <header className="topbar">
-          <span className="workspace-label">MoneyLai workspace</span>
-          <span className="role-tag">{`${roleLabel} access`}</span>
-        </header>
-        {message && (
-          <p className="notice error" role="alert">
-            {message}
-          </p>
-        )}
-        <main className="page-content">{children}</main>
-        <footer className="site-footer">
-          MoneyLai · Club budget & expense management
-        </footer>
-      </div>
-    </div>
+    <WorkspaceFrame
+      profile={profile}
+      onSignOut={signOut}
+      signingOut={signingOut}
+    >
+      {message && (
+        <p className="notice error" role="alert">
+          {message}
+        </p>
+      )}
+      {children}
+    </WorkspaceFrame>
   );
 }

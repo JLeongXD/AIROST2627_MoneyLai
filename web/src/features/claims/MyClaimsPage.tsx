@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { PageHeader, Notice, Loading, EmptyState } from "@/components/UI";
+import { ClaimFeed } from "@/components/FinanceViews";
 import ClaimsTable from "@/components/ClaimsTable";
 import { listClaims, rpc } from "@/lib/api";
 import { useLoad } from "@/lib/useLoad";
@@ -10,6 +11,7 @@ import { STATUS_LABELS, errorMessage } from "@/lib/domain";
 import type { ClaimStatus } from "@/lib/types";
 export default function MyClaimsPage() {
   const { user } = useAuth();
+  const [view, setView] = useState("timeline");
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [message, setMessage] = useState("");
@@ -60,6 +62,24 @@ export default function MyClaimsPage() {
       {message && <Notice tone="success">{message}</Notice>}
       {deleteError && <Notice tone="error">{deleteError}</Notice>}
       <section className="panel">
+        <div
+          className="view-switch"
+          role="group"
+          aria-label="Claim history layout"
+        >
+          <button
+            aria-pressed={view === "timeline"}
+            onClick={() => setView("timeline")}
+          >
+            Timeline
+          </button>
+          <button
+            aria-pressed={view === "cards"}
+            onClick={() => setView("cards")}
+          >
+            Cards / Table
+          </button>
+        </div>
         <div className="filter-bar">
           <label className="search-field">
             <span className="sr-only">Search claims</span>
@@ -93,7 +113,11 @@ export default function MyClaimsPage() {
         ) : error ? (
           <Notice tone="error">{error}</Notice>
         ) : filtered.length ? (
-          <ClaimsTable claims={filtered} onDelete={remove} busyId={busy} />
+          view === "timeline" ? (
+            <ClaimFeed claims={filtered} />
+          ) : (
+            <ClaimsTable claims={filtered} onDelete={remove} busyId={busy} />
+          )
         ) : (
           <EmptyState
             title={
