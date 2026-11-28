@@ -4,13 +4,14 @@ A university club budget and expense reimbursement web application built for the
 
 It includes optional Gemini receipt assistance, item-level claim allocation, clarification requests, duplicate-receipt warnings and downloadable activity reports. MoneyLai records reimbursements made outside the application; it does **not** transfer money or automatically approve claims.
 
-- **Repository:** https://github.com/JLeongXD/AIROST2627_MoneyLai
-- **Live website:** Not recorded in this README yet. Add the public deployed URL before submission.
-- **Project documentation:** [Web/App project document](docs/MoneyLai_Project_Documentation.docx) | [Technical document](docs/MoneyLai_Technicial_Documentation.docx)
+- **Repository:** [GitHub source](https://github.com/JLeongXD/AIROST2627_MoneyLai)
+- **Live website:** [Open MoneyLai](https://airost-2627-money-lai.vercel.app/)
+- **Pitch deck:** [View presentation](https://airost-2627-money-lai.vercel.app/slide) | [HTML source](web/public/moneylai-deck.html)
+- **Latest documentation:** [Web/App project document](documentation/NEW/MoneyLai_Project_Documentation.docx) | [Technical document](documentation/NEW/MoneyLai_Technicial_Documentation.docx)
 
 ## Features and roles
 
-Google registration supports President approval: apply with Google, wait for approval, then set a MoneyLai password to activate. Active members can use Google or email/password; existing email invitations remain supported. Follow [Google registration setup](docs/GOOGLE_SIGNUP_SETUP.md) before production use. Migration 016 and Google/Supabase configuration are required.
+Google registration supports President approval: apply with Google, wait for approval, then set a MoneyLai password to activate. Active members can use Google or email/password; existing email invitations remain supported. Follow [Google registration setup](documentation/GOOGLE_SIGNUP_SETUP.md) before production use. Migration 016 and Google/Supabase configuration are required.
 
 | Role | Main capabilities |
 | --- | --- |
@@ -27,7 +28,7 @@ Additional features:
 - Potential duplicate detection using indexed file fingerprints and receipt details, with matching-claim links, statuses and a recheck action for review. A warning is not a finding of fraud.
 - Budget shortfall notices show available activity budget, the claim amount and the difference during entry and review. Members may submit an over-budget claim, but the shortfall must be resolved before approval.
 - Clarification requests and replies, with claim and activity audit histories.
-- Gmail notifications for approved claims and recorded payments, with a durable retry queue. Follow [email notification setup](docs/EMAIL_NOTIFICATIONS_SETUP.md); migration 017, sender credentials and a hosting scheduler are required.
+- Gmail notifications for approved claims and recorded payments, with a durable retry queue. Follow [email notification setup](documentation/EMAIL_NOTIFICATIONS_SETUP.md); migration 017, sender credentials and a hosting scheduler are required.
 - Excel, PDF and ZIP activity exports with role-specific evidence access.
 - President overview with membership and budget queues, activity balances, budget-use alerts at 80% or higher, and follow-up on loaded claims awaiting review for seven days or more.
 - Five-second polling, focus and connectivity-triggered refresh, operation feedback and sync status. This is not a WebSocket subscription or an offline-write queue.
@@ -108,7 +109,7 @@ For initial setup, create and confirm the initial President and Treasurer accoun
 
 Edit the example emails in [BOOTSTRAP_ROLES.sql](supabase/BOOTSTRAP_ROLES.sql), then run the script as the project owner to assign and activate the initial Treasurer and President accounts. This script is for initial setup or emergency recovery. Use the website's Members page for routine invitations, role changes and access management. Use a second Treasurer if a Treasurer needs to submit personal claims: a person cannot approve their own claim.
 
-The application assumes one club with President-controlled membership. Google self-registration requires allowing new Auth signups; these identities have no business access until approved and activated. Follow [the Google setup guide](docs/GOOGLE_SIGNUP_SETUP.md). Do not commit account passwords or real payout information as demo data.
+The application assumes one club with President-controlled membership. Google self-registration requires allowing new Auth signups; these identities have no business access until approved and activated. Follow [the Google setup guide](documentation/GOOGLE_SIGNUP_SETUP.md). Do not commit account passwords or real payout information as demo data.
 
 For email invitations, configure Supabase Auth email delivery and allow the deployed `/join**` redirect, plus localhost for development. Invitation and recovery email templates must retain `{{ .ConfirmationURL }}`. Supabase Auth emails and the Gmail claim notifications below use separate delivery configuration.
 
@@ -142,7 +143,7 @@ Never prefix server credentials with `NEXT_PUBLIC_`, commit `.env.local`, or exp
 npm run dev
 ```
 
-Open http://localhost:3000 and sign in with a configured account.
+Open [http://localhost:3000](http://localhost:3000) and sign in with a configured account. To view the pitch deck locally, open [http://localhost:3000/slide](http://localhost:3000/slide); the presentation does not require sign-in.
 
 ### 6. Configure claim notification delivery
 
@@ -150,7 +151,7 @@ After migration 017, configure the Gmail sender with 2-Step Verification and an 
 
 Configure an external scheduler to call `GET /api/notifications/dispatch` with `Authorization: Bearer <CRON_SECRET>`, ideally every minute where the hosting plan supports it. Each call processes up to five messages. The repository does not create a hosting scheduler automatically.
 
-Approval and payment actions also request immediate dispatch, but the scheduler recovers queued messages after interruptions or delivery failures. Email failures do not undo financial actions. Follow [the email notification setup guide](docs/EMAIL_NOTIFICATIONS_SETUP.md) for setup, retries and live acceptance checks.
+Approval and payment actions also request immediate dispatch, but the scheduler recovers queued messages after interruptions or delivery failures. Email failures do not undo financial actions. Follow [the email notification setup guide](documentation/EMAIL_NOTIFICATIONS_SETUP.md) for setup, retries and live acceptance checks.
 
 ## End-to-end demonstration
 
@@ -196,6 +197,7 @@ Export PDFs use the bundled Noto Sans SC font; retain its accompanying OFL licen
 
 | Route | Purpose |
 | --- | --- |
+| `/slide` | Public pitch deck; no sign-in required |
 | `/login` | Sign-in and password recovery request |
 | `/membership` | Google membership application, approval status and password activation |
 | `/join` | Email invitation verification and Member password activation |
@@ -266,7 +268,7 @@ npm run build
 
 Database suites use local embedded PostgreSQL with test infrastructure; they are not live Supabase acceptance tests. AI tests do not establish that a real Gemini account has sufficient quota or that production receipt extraction succeeds. Membership and notification tests do not establish that live Google OAuth, identity linking, Supabase Auth emails or Gmail delivery work on the deployed project.
 
-These commands are reproducible checks, **not a claim that they currently all pass**. [docs/VERIFICATION.md](docs/VERIFICATION.md) is an older, dated verification record; it does not verify every newer feature. Before release, rerun checks and test actual login, role restrictions, uploads, recovery email, AI, exports and reimbursement against the configured environment.
+These commands are reproducible checks, **not a claim that they currently all pass**. [documentation/VERIFICATION.md](documentation/VERIFICATION.md) is an older, dated verification record; it does not verify every newer feature. Before release, rerun checks and test actual login, role restrictions, uploads, recovery email, AI, exports and reimbursement against the configured environment.
 
 ## Deployment
 
@@ -276,10 +278,10 @@ Suggested configuration for a Next.js-compatible host such as Vercel:
 2. Configure the environment variables listed above in the hosting dashboard.
 3. Apply only the missing Supabase migrations for the same application version.
 4. Build with `npm run build` and deploy. If the host requires a start command, use `npm run start`.
-5. Set Supabase Auth Site URL to the deployed origin and allow the production `/auth/callback` redirects for recovery (`?next=/update-password`) and Google membership (`?next=/membership`), plus `/join**` for invitations. Keep localhost redirects for local development if needed. Configure Google OAuth using [the setup guide](docs/GOOGLE_SIGNUP_SETUP.md).
-6. Configure Supabase Auth email delivery and test invitations and password recovery. Separately configure the Gmail claim sender, production `APP_URL`, `CRON_SECRET` and protected dispatch scheduler using [the notification guide](docs/EMAIL_NOTIFICATIONS_SETUP.md).
+5. Set Supabase Auth Site URL to the deployed origin and allow the production `/auth/callback` redirects for recovery (`?next=/update-password`) and Google membership (`?next=/membership`), plus `/join**` for invitations. Keep localhost redirects for local development if needed. Configure Google OAuth using [the setup guide](documentation/GOOGLE_SIGNUP_SETUP.md).
+6. Configure Supabase Auth email delivery and test invitations and password recovery. Separately configure the Gmail claim sender, production `APP_URL`, `CRON_SECRET` and protected dispatch scheduler using [the notification guide](documentation/EMAIL_NOTIFICATIONS_SETUP.md).
 7. Verify the host's request-duration, memory and file limits for AI/report operations; a route's declared timeout does not override hosting limits.
-8. Test each role using appropriate demonstration accounts, including membership activation, disabled-account restrictions, claim approval and payment notifications. Add the deployed URL to the top of this README.
+8. Test each role using appropriate demonstration accounts, including membership activation, disabled-account restrictions, claim approval and payment notifications. Keep the live website and pitch deck URLs at the top of this README current.
 
 Do not upload credentials into the public repository. Provide any demonstration login instructions through the appropriate assessment channel, using non-sensitive demo data.
 
@@ -296,14 +298,16 @@ Do not upload credentials into the public repository. Provide any demonstration 
 
 ## Project documentation
 
+The latest Word and PDF documents are in `documentation/NEW/`. Previous PDF versions are archived in `documentation/OLD/`.
+
 The Web/App documentation follows the supplied sections: Project Overview, Features, Data Design and Technology Stack.
 
-- [Web/App project documentation - editable Word](docs/MoneyLai_Project_Documentation.docx)
-- [Web/App project documentation - PDF](docs/MoneyLai_Project_Documentation.pdf)
-- [Technical documentation - editable Word](docs/MoneyLai_Technicial_Documentation.docx)
-- [Technical documentation - PDF](docs/MoneyLai_Technicial_Documentation.pdf)
+- [Web/App project documentation - editable Word](documentation/NEW/MoneyLai_Project_Documentation.docx)
+- [Web/App project documentation - PDF](documentation/NEW/MoneyLai_Project_Documentation.pdf)
+- [Technical documentation - editable Word](documentation/NEW/MoneyLai_Technicial_Documentation.docx)
+- [Technical documentation - PDF](documentation/NEW/MoneyLai_Technicial_Documentation.pdf)
 
 The technical document covers environment setup, development, usage and weekly progress. These are separate artifacts; updating this README does not regenerate their contents. Check them against the current application before submission.
 
-Complete team/member details and the live website URL before submission. Public documentation should use example credentials and fictional payout data only.
+Complete team/member details and verify the live website and pitch deck URLs before submission. Public documentation should use example credentials and fictional payout data only.
 
