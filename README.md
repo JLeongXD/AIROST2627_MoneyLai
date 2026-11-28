@@ -9,6 +9,18 @@ It includes optional Gemini receipt assistance, item-level claim allocation, cla
 - **Pitch deck:** [View presentation](https://airost-2627-money-lai.vercel.app/slide) | [HTML source](web/public/moneylai-deck.html)
 - **Latest documentation:** [Web/App project document](documentation/NEW/MoneyLai_Project_Documentation.docx) | [Technical document](documentation/NEW/MoneyLai_Technicial_Documentation.docx)
 
+## Reviewer demo access
+
+Reviewers can visit the [MoneyLai login page](https://airost-2627-money-lai.vercel.app/login) and use the following demo credentials to try the application:
+
+| Email | Password |
+| --- | --- |
+| [president@example.com](mailto:president@example.com) | `12345678` |
+| [treasurer2@example.com](mailto:treasurer2@example.com) | `jl12345` |
+| [treasurer2@example.com](mailto:treasurer2@example.com) | `12345678` |
+
+The credentials are listed as provided. Two password options were supplied for `treasurer2@example.com`; try each option when signing in. Use fictional data during the review.
+
 ## Features and roles
 
 Google registration supports President approval: apply with Google, wait for approval, then set a MoneyLai password to activate. Active members can use Google or email/password; existing email invitations remain supported. Follow [Google registration setup](documentation/GOOGLE_SIGNUP_SETUP.md) before production use. Migration 016 and Google/Supabase configuration are required.
@@ -109,7 +121,7 @@ For initial setup, create and confirm the initial President and Treasurer accoun
 
 Edit the example emails in [BOOTSTRAP_ROLES.sql](supabase/BOOTSTRAP_ROLES.sql), then run the script as the project owner to assign and activate the initial Treasurer and President accounts. This script is for initial setup or emergency recovery. Use the website's Members page for routine invitations, role changes and access management. Use a second Treasurer if a Treasurer needs to submit personal claims: a person cannot approve their own claim.
 
-The application assumes one club with President-controlled membership. Google self-registration requires allowing new Auth signups; these identities have no business access until approved and activated. Follow [the Google setup guide](documentation/GOOGLE_SIGNUP_SETUP.md). Do not commit account passwords or real payout information as demo data.
+The application assumes one club with President-controlled membership. Google self-registration requires allowing new Auth signups; these identities have no business access until approved and activated. Follow [the Google setup guide](documentation/GOOGLE_SIGNUP_SETUP.md). Only designated assessment demo credentials may be published; do not commit production account passwords or real payout information as demo data.
 
 For email invitations, configure Supabase Auth email delivery and allow the deployed `/join**` redirect, plus localhost for development. Invitation and recovery email templates must retain `{{ .ConfirmationURL }}`. Supabase Auth emails and the Gmail claim notifications below use separate delivery configuration.
 
@@ -283,7 +295,7 @@ Suggested configuration for a Next.js-compatible host such as Vercel:
 7. Verify the host's request-duration, memory and file limits for AI/report operations; a route's declared timeout does not override hosting limits.
 8. Test each role using appropriate demonstration accounts, including membership activation, disabled-account restrictions, claim approval and payment notifications. Keep the live website and pitch deck URLs at the top of this README current.
 
-Do not upload credentials into the public repository. Provide any demonstration login instructions through the appropriate assessment channel, using non-sensitive demo data.
+Do not upload production credentials into the public repository. The designated assessment demo logins are listed above; use non-sensitive demo data.
 
 ## Current boundaries
 
