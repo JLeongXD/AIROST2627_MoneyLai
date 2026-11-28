@@ -127,8 +127,7 @@ export function ClaimTrend({
     <section className="panel trend-panel">
       <div className="section-heading">
         <div>
-          <span className="eyebrow">SUBMISSION ACTIVITY</span>
-          <h2>A six-month perspective.</h2>
+          <h2>Monthly claims</h2>
         </div>
         <span className="role-pill">
           {m.label} · {m.items.length} claims
@@ -159,10 +158,9 @@ export function ClaimTrend({
         ))}
       </div>
       <p className="small-text">
-        {m.label}: {money(amount)} in submitted claim value. Includes later
-        rejected claims; this is not cash expenditure. Based on up to 500 loaded
-        records.
+        {m.label} · {money(amount)} submitted
       </p>
+      <details className="small-text"><summary>About this chart</summary><p>Submission value includes later rejected claims and is not cash expenditure. Based on up to 500 loaded records.</p></details>
     </section>
   );
 }

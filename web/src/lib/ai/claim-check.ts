@@ -22,7 +22,7 @@ export type CheckResult = Extraction & {
   date_status: "match" | "mismatch" | "unable_to_verify";
   receipt_total: string | null;
   needs_attention: boolean;
-  allocation?: { expected_amount: string; claimed_amount: string; difference: string; receipt_total: string; revision: number };
+  allocation?: { expected_amount: string; claimed_amount: string; difference: string; receipt_total: string; revision: number; method?: string };
 };
 export type SavedCheck = {
   id: string;
@@ -138,7 +138,7 @@ export function compareClaim(
         cents(r.amount) !== null,
     );
   const sum = allAmounts ? rs.reduce((n, r) => n + cents(r.amount!)!, 0) : null;
-  const expected = plan ? cents(plan.calculation.expected_amount) : sum;
+  const expected = plan && plan.selection.mode === "simple" ? cents(plan.calculation.automatic_amount ?? "") : plan && plan.selection.mode !== "full" ? cents(plan.calculation.expected_amount) : sum;
   const warnings = [...extracted.warnings, ...(plan?.calculation.issues ?? [])];
   if (plan && sum !== cents(plan.extraction.total ?? "")) warnings.push("Fresh AI reading differs from the saved original total. Compare the original and any user corrections before deciding.");
   const amount_status =
@@ -165,7 +165,7 @@ export function compareClaim(
       date_status !== "match" ||
       !extracted.purpose_clear ||
       warnings.length > 0,
-    ...(plan && expected !== null ? { allocation: { expected_amount: plan.calculation.expected_amount, claimed_amount: amount,
-      difference: ((cents(amount)! - expected) / 100).toFixed(2), receipt_total: plan.calculation.receipt_total, revision: plan.revision } } : {}),
+    ...(plan && expected !== null ? { allocation: { expected_amount: (expected / 100).toFixed(2), claimed_amount: amount,
+      difference: ((cents(amount)! - expected) / 100).toFixed(2), receipt_total: plan.calculation.receipt_total, revision: plan.revision, method: plan.selection.mode } } : {}),
   };
 }

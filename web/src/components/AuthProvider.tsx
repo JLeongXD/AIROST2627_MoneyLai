@@ -11,6 +11,7 @@ import { createClient } from "@/lib/supabase/client";
 import { getProfile } from "@/lib/api";
 import { errorMessage } from "@/lib/domain";
 import type { Profile } from "@/lib/types";
+import { subscribeToRefresh } from "@/lib/live-sync";
 type AuthContextValue = {
   user: User | null;
   profile: Profile | null;
@@ -62,35 +63,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         data.subscription.unsubscribe();
       };
     } catch (e) {
-      setError(errorMessage(e));
-      setSessionReady(true);
+      void Promise.resolve().then(() => {
+        if (active) { setError(errorMessage(e)); setSessionReady(true); }
+      });
     }
     return () => {
       active = false;
     };
   }, []);
+  const userId = user?.id;
   useEffect(() => {
-    if (!user) return;
+    if (!userId) return;
     let active = true;
-    void getProfile(user.id)
+    let pending = false;
+    const load = () => {
+      if (pending || !active) return;
+      pending = true;
+      void getProfile(userId)
       .then((p) => {
         if (active) {
           setProfile(p);
-          setProfileFor(user.id);
+          setProfileFor(userId);
           setError("");
         }
       })
       .catch((e) => {
         if (active) {
           setProfile(null);
-          setProfileFor(user.id);
+          setProfileFor(userId);
           setError(`Account setup could not be loaded: ${errorMessage(e)}`);
         }
-      });
+      }).finally(() => { pending = false; });
+    };
+    load();
+    // Role/status are authoritative database fields, not stale JWT metadata.
+    const unsubscribe = subscribeToRefresh(load);
     return () => {
       active = false;
+      unsubscribe();
     };
-  }, [user?.id, revision]);
+  }, [userId, revision]);
   const ready = sessionReady && (!user || profileFor === user.id);
   return (
     <AuthContext.Provider

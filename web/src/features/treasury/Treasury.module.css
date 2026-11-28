@@ -1,0 +1,161 @@
+.desk, .review { color: #173f35; min-width: 0; }
+.desk :global(.page-header) { margin-bottom: 24px; }
+.desk :global(.page-header h1), .reviewHeader h1 { font-size: clamp(1.8rem, 3vw, 2.4rem); line-height: 1.2; margin: 8px 0; }
+.desk :global(.panel).toolbar { padding: 0; overflow: hidden; }
+.queues { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); border-bottom: 1px solid #dce5df; }
+.queues button { background: transparent; border: 0; border-bottom: 3px solid transparent; padding: 20px 16px; color: #465d54; display: flex; gap: 10px; align-items: center; justify-content: center; min-height: 64px; font-size: 1rem; }
+.queues button[aria-pressed=true] { border-bottom-color: #174f3e; color: #123f34; background: #eef5f0; font-weight: 700; }
+.queues button:hover { background: #f2f6f3; }
+.queues b { background: #e5ece7; border-radius: 20px; padding: 2px 9px; font-size: .875rem; }
+.filters { display: flex; align-items: end; gap: 16px; padding: 20px 24px; }
+.filters > div:first-child { flex: 1; }
+.filters > div { min-width: 0; }
+.filters label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: 8px; }
+.filters input, .filters select { width: 100%; margin: 0; min-height: 46px; font-size: 1rem; }
+.filters select { max-width: 300px; text-overflow: ellipsis; }
+.filters button { min-height: 46px; white-space: nowrap; }
+.listCaption { display: flex; gap: 12px; align-items: center; margin: 28px 0 14px; }
+.listCaption h2 { margin: 0; font-size: 1.25rem; }
+.listCaption > span, .help { color: #51655c; font-size: .875rem; }
+.help { margin: 16px 0; line-height: 1.6; }
+.claimList { margin: 0; padding: 0; list-style: none; background: white; border: 1px solid #dce5df; border-radius: 14px; overflow: hidden; }
+.claimList li + li { border-top: 1px solid #e2e9e4; }
+.claimRow { display: grid; grid-template-columns: minmax(140px, 1fr) minmax(180px, 1.6fr) auto 138px; align-items: center; gap: 24px; padding: 24px; text-decoration: none; color: inherit; }
+.claimRow:hover { background: #f3f7f4; }
+.claimRow > div { min-width: 0; }
+.member strong { font-size: 1rem; display: block; overflow-wrap: anywhere; }
+.member span { display: block; font-size: .875rem; margin-top: 6px; color: #51655c; overflow-wrap: anywhere; }
+.expense p { margin: 0 0 6px; font-size: 1rem; line-height: 1.5; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.expense small { color: #51655c; font-size: .875rem; }
+.rowAmount { display: flex; flex-direction: column; align-items: end; gap: 8px; }
+.rowAmount strong { font-size: 1.125rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rowAction { border: 1px solid #bdcfc3; padding: 10px 12px; border-radius: 8px; font-size: .875rem; text-align: center; font-weight: 600; }
+.reviewNav { display: flex; justify-content: space-between; gap: 16px; align-items: center; margin: 12px 0 24px; font-size: .875rem; }
+.reviewNav a { padding: 10px 0; font-weight: 600; }
+.reviewNav span { color: #51655c; }
+.reviewHeader { display: flex; gap: 24px; align-items: center; justify-content: space-between; }
+.reviewHeader > div { min-width: 0; }
+.reviewHeader h1, .reviewHeader p { overflow-wrap: anywhere; }
+.reviewHeader p { margin: 0; font-size: 1rem; color: #51655c; }
+.headerAmount { display: flex; flex-direction: column; align-items: end; gap: 8px; }
+.headerAmount strong { font-size: clamp(1.7rem, 3vw, 2.3rem); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.intro { margin: 20px 0 28px; color: #51655c; line-height: 1.6; font-size: 1rem; }
+.completion { display: flex; flex-wrap: wrap; gap: 14px; align-items: center; }
+.reviewGrid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(340px, 1fr); gap: 24px; align-items: start; grid-template-areas: "evidence summary" "evidence checks" "evidence more" "decisions decisions"; }
+.review[data-status=approved] .reviewGrid { grid-template-areas: "evidence summary" "evidence decisions" "evidence checks" "more more"; }
+.summary { grid-area: summary; }
+.evidence { grid-area: evidence; align-self: stretch; min-width: 0; }
+.evidence > :global(.panel) { position: sticky; top: 100px; }
+.checks { grid-area: checks; min-width: 0; display: grid; gap: 16px; }
+.checks > h2 { margin-bottom: 0; }
+.checks > aside { margin: 0; padding: 12px; }
+.checks > aside dl { display: flex; flex-wrap: wrap; gap: 8px 16px; margin: 8px 0; }
+.checks > aside dl > div { flex: 1 1 110px; display: grid; gap: 4px; }
+.checks > aside dt { font-size: .8rem; }
+.checks > aside p { font-size: .85rem; }
+.attentionRow { display: flex; flex-wrap: wrap; gap: 8px 16px; padding: 12px; background: #fff8e7; border-radius: 12px; line-height: 1.5; }
+.attentionRow a { font-weight: 600; }
+.decisions { grid-area: decisions; min-width: 0; display: grid; gap: 16px; }
+.more { grid-area: more; min-width: 0; display: grid; gap: 16px; }
+.review .reviewGrid :global(.panel) { padding: 24px; margin: 0; border-radius: 14px; }
+.reviewGrid h2 { font-size: 1.2rem; margin: 0 0 14px; }
+.purpose { line-height: 1.6; margin: 6px 0 16px; overflow-wrap: anywhere; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.summary > small { color: #51655c; }
+.descriptionDetails { margin: 0 0 16px; }
+.descriptionDetails summary { cursor: pointer; color: #345d50; font-weight: 600; }
+.descriptionDetails p { line-height: 1.6; overflow-wrap: anywhere; }
+.review[data-status=submitted] .decisions { position: sticky; bottom: 16px; z-index: 35; }
+.review .reviewGrid .actionPanel { background: var(--glass-solid); box-shadow: var(--glass-float-shadow); -webkit-backdrop-filter: var(--glass-blur); backdrop-filter: var(--glass-blur); }
+.review[data-status=submitted] .reviewGrid .actionPanel { padding: 14px 20px; }
+.actionPanel > h2 { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.decisionActions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.decisionActions > button:first-child { width: auto; flex: 1 1 240px; }
+.decisionActions > button { min-height: 44px; }
+.actionPanel .approvalHint { margin: 0 0 8px; color: #755212; font-size: .85rem; line-height: 1.4; }
+.reviewGrid :global(.details-list) { margin-bottom: 0; }
+.reviewGrid :global(.details-list dd) { overflow-wrap: anywhere; font-size: 1rem; }
+.budget { border-top: 1px solid #e0e8e2; padding-top: 18px; margin-top: 18px; display: grid; grid-template-columns: 1fr auto; gap: 8px; font-size: .875rem; }
+.budget strong { font-size: 1rem; }
+.budget small { grid-column: 1 / -1; color: #51655c; font-size: .875rem; }
+.reviewGrid :global(.notice) { margin: 16px 0 0; overflow-wrap: anywhere; }
+.review .checks > :global(.notice), .review .decisions > :global(.notice) { margin: 0; }
+.evidence :global(.receipt-stage) { height: clamp(340px, 55vh, 660px); margin-top: 18px; padding: 12px; }
+.evidence :global(.receipt-stage iframe) { width: 100%; height: 100%; }
+.evidence :global(.receipt-stage img) { display: block; width: 100%; height: 100%; object-fit: contain; }
+.evidence :global(.receipt-stage.zoomed) { overflow: auto; }
+.evidence :global(.receipt-stage.zoomed img) { max-width: none; width: 170%; height: auto; max-height: none; }
+.evidence :global(.receipt-file-tabs) { display: flex; flex-wrap: wrap; gap: 8px; }
+.evidence :global(.receipt-file-tabs button) { min-height: 44px; max-width: 100%; overflow-wrap: anywhere; white-space: normal; text-align: left; font-size: .875rem; }
+.evidence :global(.eyebrow) { display: none; }
+.evidence :global(.section-heading) { flex-wrap: wrap; gap: 12px; }
+.evidence :global(.section-heading h2) { margin: 0; }
+.evidence :global(.form-actions) { flex-wrap: wrap; }
+.actionPanel > p { color: #51655c; font-size: 1rem; margin-bottom: 20px; line-height: 1.5; }
+.actionPanel > small { display: block; color: #51655c; font-size: .875rem; margin-top: 12px; line-height: 1.5; }
+.alternatives { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 16px; }
+.decisionForm { border-top: 1px solid #e0e8e2; padding-top: 20px; margin-top: 20px; }
+.reviewGrid :global(textarea), .reviewGrid :global(input:not([type=checkbox])) { min-width: 0; max-width: 100%; font-size: 1rem; }
+.reviewGrid :global(fieldset) { min-width: 0; }
+.reviewGrid :global(.payout-card) { overflow-wrap: anywhere; }
+.disclosure { scroll-margin-top: 120px; }
+.disclosure summary, .checks :global(summary) { cursor: pointer; font-size: 1rem; font-weight: 600; min-height: 28px; overflow-wrap: anywhere; }
+.disclosure[open] > summary, .checks :global(details[open] > summary) { margin-bottom: 18px; }
+.disclosure:target { outline: 2px solid #517c62; }
+.more :global(.panel .panel) { margin-top: 20px; padding: 0; border: 0; box-shadow: none; }
+.review :global(a:focus-visible), .desk :global(a:focus-visible), .review :global(button:focus-visible), .desk :global(button:focus-visible), .review :global(summary:focus-visible) { outline: 3px solid #438264; outline-offset: 3px; }
+@media (max-width: 1000px) {
+  .claimRow { grid-template-columns: minmax(120px, 1fr) minmax(140px, 1.3fr) auto; gap: 16px; }
+  .rowAction { grid-column: 1 / -1; justify-self: end; }
+  .reviewGrid { grid-template-columns: minmax(0, 1fr) minmax(300px, 1fr); gap: 20px; }
+  .review .reviewGrid :global(.panel) { padding: 20px; }
+}
+@media (max-width: 780px) {
+  .queues { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .queues button { justify-content: space-between; text-align: left; padding: 14px 16px; min-height: 56px; font-size: .875rem; }
+  .filters { flex-wrap: wrap; padding: 16px; gap: 14px; }
+  .filters > div, .filters > div:first-child { flex: 1 1 100%; }
+  .filters select { max-width: none; }
+  .claimList { border: 0; background: transparent; overflow: visible; }
+  .claimList li, .claimList li + li { border: 1px solid #dce5df; border-radius: 12px; background: white; overflow: hidden; margin-bottom: 12px; }
+  .claimRow { padding: 18px; grid-template-columns: minmax(0, 1fr) auto; gap: 16px; }
+  .member { grid-column: 1; grid-row: 1; }
+  .rowAmount { grid-column: 2; grid-row: 1; }
+  .expense { grid-column: 1 / -1; }
+  .rowAction { justify-self: stretch; min-height: 44px; }
+  .reviewNav { margin-bottom: 14px; }
+  .reviewHeader { align-items: start; gap: 14px; flex-wrap: wrap; }
+  .reviewHeader h1 { font-size: 1.7rem; }
+  .headerAmount { align-items: start; }
+  .headerAmount strong { font-size: 1.7rem; }
+  .intro { margin: 16px 0 20px; }
+  .reviewGrid { grid-template-columns: minmax(0, 1fr); grid-template-areas: "summary" "checks" "evidence" "more" "decisions"; gap: 16px; }
+  .review[data-status=approved] .reviewGrid { grid-template-areas: "summary" "decisions" "evidence" "checks" "more"; }
+  .evidence > :global(.panel) { position: static; }
+  .evidence :global(.receipt-stage) { height: 380px; max-height: 60vh; }
+  .review .reviewGrid :global(.panel) { padding: 18px; }
+  .review .summary :global(.details-list > div) { flex-direction: row; justify-content: space-between; flex-wrap: wrap; }
+  .review .summary :global(.details-list dd) { max-width: 60%; text-align: right; }
+  .reviewGrid :global(.details-list > div) { gap: 12px; }
+  .reviewGrid :global(.button) { min-height: 46px; white-space: normal; text-align: center; }
+  .alternatives > :global(.button) { flex: 1; }
+  .reviewGrid :global(.form-actions) { flex-wrap: wrap; }
+  .completion { align-items: stretch; flex-direction: column; }
+  .review[data-status=submitted] .decisions { bottom: max(8px, env(safe-area-inset-bottom)); }
+  .decisionActions { display: grid; grid-template-columns: 1.2fr 1.1fr .8fr; gap: 8px; }
+  .decisionActions > button { width: 100%; min-width: 0; padding: 10px 8px; font-size: .85rem; line-height: 1.3; white-space: normal; }
+  .actionPanel > small { font-size: .8rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .claimRow { transition: background-color .15s ease; }
+}
+.claimList { background: var(--glass-surface); border-color: var(--glass-edge); border-radius: 22px; box-shadow: var(--glass-shadow); }
+.claimRow:hover { background: var(--glass-hover); }
+.rowAction { background: var(--glass-nested); border-color: var(--glass-edge); border-radius: 12px; box-shadow: inset 0 1px 0 #fff; }
+.queues button[aria-pressed=true] { background: var(--glass-tint); border-bottom-color: var(--accent); }
+.queues button:hover { background: var(--glass-hover); }
+.queues b { background: #ffffffa6; }
+.review .reviewGrid :global(.panel) { border-radius: 22px; }
+@media (max-width: 780px) {
+  .claimList { background: transparent; box-shadow: none; border: 0; }
+  .claimList li, .claimList li + li { background: var(--glass-surface); border-color: var(--glass-edge); border-radius: 20px; box-shadow: var(--glass-shadow); }
+}

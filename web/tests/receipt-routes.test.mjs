@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import { createRequire, Module } from "node:module";
 import path from "node:path";
 import ts from "typescript";
-import { reading, selection } from "./fixtures/receipt.mjs";
+import { reading, selection, subtotalReading, itemAnswers } from "./fixtures/receipt.mjs";
 const require = createRequire(import.meta.url);
 async function load(file, imports = {}) {
   const m = new Module(path.resolve(file)); m.filename = path.resolve(file); m.paths = require.resolve.paths("typescript");
@@ -18,9 +18,9 @@ const domain = await load("src/lib/domain.ts");
 const server = await load("src/lib/ai/receipt-server.ts", { "server-only": {}, "@supabase/supabase-js": {} });
 const sessionId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", userId = "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb", claimId = "cccccccc-cccc-4ccc-8ccc-cccccccccccc";
 const bytes = Buffer.from([137,80,78,71,13,10,26,10,0,0]);
-async function fixture({ auth = true, owns = true, mismatch = false, finishError = false, status = "complete", readFailure = false } = {}) {
+async function fixture({ auth = true, owns = true, mismatch = false, finishError = false, status = "complete", readFailure = false, receipt = reading } = {}) {
   const calls = [];
-  const session = { id: sessionId, user_id: userId, activity_id: "activity", claim_id: null, status, expires_at: "2099-01-01T00:00:00Z", extraction: reading, mime_type: "image/png", original_name: "receipt.png", storage_path: `${userId}/${sessionId}/source.png`, sha256: createHash("sha256").update(bytes).digest("hex") };
+  const session = { id: sessionId, user_id: userId, activity_id: "activity", claim_id: null, status, expires_at: "2099-01-01T00:00:00Z", extraction: receipt, mime_type: "image/png", original_name: "receipt.png", storage_path: `${userId}/${sessionId}/source.png`, sha256: createHash("sha256").update(bytes).digest("hex") };
   function query(table) {
     const filters = {};
     const q = { select: () => q, eq: (key, value) => { filters[key] = value; return q; }, is: () => q, lt: () => q, in: () => q, delete: () => q,
@@ -51,7 +51,7 @@ async function fixture({ auth = true, owns = true, mismatch = false, finishError
     "@/lib/ai/receipt-server": { ...server, receiptAdmin: () => client }, "@/lib/domain": domain,
     "@/lib/ai/receipt-reader": { readReceiptDraft: async (...args) => { calls.push(["read", args[2].bytes.length]);
       if (readFailure) throw Object.assign(new Error("Gemini is temporarily busy or unavailable (HTTP 503). Try again shortly."), { name: "ReceiptAiError", httpStatus: 503, diagnostic: { providerHttpStatus: 503, providerStatus: "UNAVAILABLE", attempts: 3 } });
-      return reading; } },
+      return receipt; } },
   };
   const save = (await load("src/app/api/receipt-drafts/[id]/save/route.ts", imports)).POST;
   const extract = (await load("src/app/api/receipt-drafts/[id]/extract/route.ts", imports)).POST;
@@ -70,6 +70,89 @@ test("Save recomputes the selected amount from server-owned facts and retains a 
   assert.equal(finished.p_user, userId);
   assert.ok(f.calls.some(c => c[0] === "upload" && c[2] === `${userId}/${claimId}/${sessionId}.png`));
 });
+test("New receipt modes save server-recalculated totals and treatment; inconsistent claim amounts are rejected", async () => {
+  for (const mode of ["full", "auto", "simple"]) {
+    const f = await fixture();
+    const chosen = { ...core.initialSelection(reading, mode), confirmed: true, items: reading.items.map(i => ({ id: i.id, included: true, amount: i.amount, reason: "Activity purchase" })) };
+    const body = { ...f.body, selection: chosen, fields: { ...f.body.fields, amount: "100.00" } };
+    assert.equal((await f.run("save", { ...body, fields: { ...body.fields, amount: "999.00" } })).status, 400);
+    assert.equal(f.calls.some(c => c[1] === "ml_prepare_receipt_claim"), false);
+    assert.equal((await f.run("save", body)).status, 200);
+    const saved = f.calls.find(c => c[1] === "ml_finish_receipt_claim")[2];
+    assert.equal(saved.p_calculation.expected_amount, "100.00"); assert.equal(saved.p_selection.mode, mode);
+    assert.equal(saved.p_selection.adjustment_treatment.tax, "included");
+    if (mode === "full") assert.equal(saved.p_calculation.tax, null);
+  }
+});
+
+test("Simple reimbursement overrides are validated and preserve automatic evidence on the server", async () => {
+  const f = await fixture();
+  const chosen = { ...core.initialSelection(reading, "simple"), items: selection.items, confirmed: true, claimed_amount: "85.00", override_reason: "Checked actual activity share on the receipt." };
+  assert.equal((await f.run("save", { ...f.body, selection: { ...chosen, override_reason: "" } })).status, 400);
+  assert.equal((await f.run("save", { ...f.body, selection: { ...chosen, claimed_amount: "0.00" }, fields: { ...f.body.fields, amount: "0.00" } })).status, 400);
+  assert.equal(f.calls.some(c => c[1] === "ml_prepare_receipt_claim"), false);
+  assert.equal((await f.run("save", { ...f.body, selection: chosen })).status, 200);
+  const saved = f.calls.find(c => c[1] === "ml_finish_receipt_claim")[2];
+  assert.equal(saved.p_selection.claimed_amount, "85.00");
+  assert.equal(saved.p_calculation.automatic_amount, "80.00");
+  assert.equal(saved.p_calculation.expected_amount, "85.00");
+  assert.match(saved.p_calculation.correction_reason, /actual activity share/);
+});
+
+test("Save requires all item purposes and exclusion reasons even when a fallback amount is confirmed", async () => {
+  for (const mode of ["full", "simple", "auto"]) {
+    for (const included of mode === "full" ? [true] : [true, false]) {
+      const f = await fixture();
+      const chosen = { ...core.initialSelection(reading, mode), items: itemAnswers(reading.items), confirmed: true };
+      chosen.items[0] = { ...chosen.items[0], included, reason: " " };
+      if (mode === "simple") { chosen.claimed_amount = "70.00"; chosen.override_reason = "Confirmed from the original receipt"; }
+      const response = await f.run("save", { ...f.body, selection: chosen });
+      assert.equal(response.status, 400);
+      assert.match((await response.json()).error, included ? /activity purpose/ : /excluded/);
+      assert.equal(f.calls.some(c => c[1] === "ml_prepare_receipt_claim"), false);
+    }
+  }
+});
+
+test("Save accepts higher and lower member corrections and preserves the AI facts and reason", async () => {
+  for (const claimed_amount of ["116.20", "108.20"]) {
+    const f = await fixture({ receipt: subtotalReading });
+    const chosen = { ...core.initialSelection(subtotalReading, "simple"), items: itemAnswers(subtotalReading.items), confirmed: true,
+      claimed_amount, override_reason: "The AI misread the amount. Check the original receipt." };
+    const body = { ...f.body, selection: chosen, fields: { ...f.body.fields, amount: claimed_amount } };
+    assert.equal((await f.run("save", { ...body, selection: { ...chosen, override_reason: "" } })).status, 400);
+    assert.equal(f.calls.some(c => c[1] === "ml_prepare_receipt_claim"), false);
+    assert.equal((await f.run("save", body)).status, 200);
+    const saved = f.calls.find(c => c[1] === "ml_finish_receipt_claim")[2];
+    assert.equal(saved.p_calculation.expected_amount, claimed_amount);
+    assert.equal(saved.p_calculation.automatic_amount, "112.20");
+    assert.equal(saved.p_calculation.raw_receipt_total, "112.20");
+    assert.equal(saved.p_calculation.receipt_total, "112.20");
+    assert.equal(saved.p_fields.amount, claimed_amount); assert.equal(saved.p_selection.override_reason, chosen.override_reason);
+    if (claimed_amount === "116.20") assert.ok(saved.p_calculation.issues.some(i => i.includes("exceeds the AI-read receipt total by RM 4.00")));
+  }
+});
+
+test("Save applies default receipt tax allocation and preserves explicit mixed-tax evidence", async () => {
+  const receipt = { ...reading, total: "106.00", tax: "6.00", line_amount_basis: "net",
+    items: [{ ...reading.items[0], amount: "60.00" }, { ...reading.items[1], amount: "40.00" }],
+    adjustment_treatment: { tax: "additional", discount: "none", rounding: "none", uniform: false, tax_scope: "unknown" } };
+  const chosen = { ...core.initialSelection(receipt, "simple"), items: itemAnswers(receipt.items), confirmed: true };
+  chosen.items[1].included = false; chosen.items[1].reason = "Personal";
+  const f = await fixture({ receipt });
+  const body = { ...f.body, selection: chosen, fields: { ...f.body.fields, amount: "63.60" } };
+  assert.equal((await f.run("save", body)).status, 200);
+  const saved = f.calls.find(c => c[1] === "ml_finish_receipt_claim")[2];
+  assert.equal(saved.p_calculation.expected_amount, "63.60"); assert.equal(saved.p_calculation.tax, "3.60");
+  assert.equal(saved.p_calculation.automatic_issue, null);
+  assert.match(saved.p_calculation.adjustment_reason, /tax is allocated across all items/);
+  assert.equal(saved.p_selection.adjustment_treatment.tax_scope, "unknown");
+  const mixed = await fixture({ receipt: { ...receipt, adjustment_treatment: { ...receipt.adjustment_treatment, tax_scope: "mixed" } } });
+  // Even a client claiming uniform tax cannot override the original reading.
+  assert.equal((await mixed.run("save", { ...body, selection: { ...chosen, adjustment_treatment: { ...chosen.adjustment_treatment, uniform: true, tax_scope: "all_items" } } })).status, 400);
+  assert.equal(mixed.calls.some(c => c[1] === "ml_prepare_receipt_claim"), false);
+});
+
 test("Invalid selections fail before preparing a claim; changed original bytes cannot be attached", async () => {
   const f = await fixture();
   assert.equal((await f.run("save", { ...f.body, selection: { ...selection, confirmed: false } })).status, 400);
@@ -79,6 +162,31 @@ test("Invalid selections fail before preparing a claim; changed original bytes c
   assert.equal(response.status, 409);
   assert.equal((await response.json()).claimId, claimId); // Recover the retained draft.
   assert.equal(changed.calls.some(c => c[1] === "ml_finish_receipt_claim"), false);
+});
+
+test("Save accepts reconciled subtotals and explicitly confirmed fallback amounts with their audit trail", async () => {
+  for (const total of ["112.20", "113.20"]) {
+    const receipt = { ...subtotalReading, total }, f = await fixture({ receipt });
+    let chosen = { ...core.initialSelection(receipt, "simple"), items: itemAnswers(receipt.items), confirmed: true };
+    chosen.items[1].included = false; chosen.items[1].reason = "Personal";
+    const body = { ...f.body, selection: chosen, fields: { ...f.body.fields, amount: "84.30" } };
+    if (total === "113.20") {
+      assert.equal((await f.run("save", body)).status, 400);
+      assert.equal(f.calls.some(c => c[1] === "ml_prepare_receipt_claim"), false);
+      chosen = core.confirmSelectedItemAmount(chosen);
+    }
+    assert.equal((await f.run("save", { ...body, selection: chosen })).status, 200);
+    const saved = f.calls.find(c => c[1] === "ml_finish_receipt_claim")[2];
+    assert.equal(saved.p_calculation.expected_amount, "84.30");
+    assert.equal(saved.p_calculation.selected_subtotal, "84.30"); assert.equal(saved.p_calculation.excluded_subtotal, "27.90");
+    if (total === "112.20") assert.equal(saved.p_calculation.automatic_amount, "84.30");
+    else {
+      assert.equal(saved.p_calculation.automatic_amount, null); assert.equal(saved.p_calculation.tax, null);
+      assert.match(saved.p_calculation.automatic_issue, /tax/);
+      assert.equal(saved.p_selection.override_reason, chosen.override_reason);
+      assert.match(saved.p_calculation.correction_reason, /84.30.*27.90/);
+    }
+  }
 });
 test("Receipt routes reject unauthenticated, foreign-session and cross-origin requests", async () => {
   for (const [options, status] of [[{ auth: false }, 401], [{ owns: false }, 409]]) {

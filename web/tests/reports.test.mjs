@@ -79,6 +79,31 @@ test("Treasurer ZIP links claims, includes originals and flags missing or damage
     await writeFile(path.join(process.env.MONEYLAI_EXPORT_QA_DIR, "report.pdf"), await zip.file("activity-report.pdf").async("nodebuffer"));
   }
 });
+test("Whole receipt exports retain AI evidence and do not mislabel unknown adjustments as zero", async () => {
+  const full = structuredClone(snapshot), plan = full.receipt_plans[0];
+  plan.selection.mode = "full";
+  plan.calculation = { ...plan.calculation, method: "full", selected_subtotal: null, tax: null, discount: null, rounding: null };
+  const pack = await buildActivityPack(full, async (_, p) => p.endsWith("receipt.pdf") ? receiptBytes : png);
+  const zip = await JSZip.loadAsync(pack.bytes), book = new ExcelJS.Workbook();
+  await book.xlsx.load(await zip.file("activity-ledger.xlsx").async("nodebuffer"));
+  for (const column of ["F", "G", "H"]) assert.equal(book.getWorksheet("Receipt calculations").getCell(`${column}2`).value, "Not separately allocated");
+  const saved = JSON.parse(await zip.file("receipt-selections.json").async("string")).plans[0];
+  assert.equal(saved.extraction.total, reading.total); assert.equal(saved.calculation.tax, null);
+});
+
+test("Reimbursement override exports distinguish automatic and member-confirmed amounts", async () => {
+  const changed = structuredClone(snapshot), p = changed.receipt_plans[0];
+  p.selection.mode = "simple"; p.selection.claimed_amount = "85.00"; p.selection.override_reason = "Verified selected activity share.";
+  p.calculation = { ...p.calculation, method: "simple", automatic_amount: "80.00", automatic_issue: null, expected_amount: "85.00" };
+  changed.claims[1].amount = "85.00";
+  const pack = await buildActivityPack(changed, async (_, path) => path.endsWith("receipt.pdf") ? receiptBytes : png);
+  const zip = await JSZip.loadAsync(pack.bytes), book = new ExcelJS.Workbook();
+  await book.xlsx.load(await zip.file("activity-ledger.xlsx").async("nodebuffer"));
+  const sheet = book.getWorksheet("Receipt calculations");
+  assert.equal(sheet.getCell("P2").value, "80.00"); assert.equal(sheet.getCell("Q2").value, p.selection.override_reason); assert.equal(sheet.getCell("R2").value, 5);
+  assert.equal(JSON.parse(await zip.file("receipt-selections.json").async("string")).plans[0].calculation.automatic_amount, "80.00");
+});
+
 test("President summary ignores accidentally supplied private evidence and never downloads it", async () => {
   const pack = await buildActivityPack({ ...snapshot, scope: "president_summary" }, () => { throw new Error("Must not download"); });
   const zip = await JSZip.loadAsync(pack.bytes);

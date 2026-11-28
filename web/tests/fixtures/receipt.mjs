@@ -11,6 +11,11 @@ export const reading = {
 };
 export const selection = { items: [
   { id: "1", included: true, amount: "30.00", reason: "Workshop drinks" },
-  { id: "2", included: true, amount: "50.00", reason: "" },
+  { id: "2", included: true, amount: "50.00", reason: "Components for the workshop assembly session" },
   { id: "3", included: false, amount: "20.00", reason: "Personal purchase" },
 ], receipt_total: "100.00", mode: "manual", tax: "0.00", discount: "0.00", rounding: "0.00", adjustment_reason: "Tax is already in the line prices.", correction_reason: "", confirmed: true };
+// Reproduces a selected share of RM84.30 after excluding RM27.90.
+export const subtotalReading = { ...reading, total: "112.20", tax: null, discount: null, rounding: null, line_amount_basis: "unknown",
+  adjustment_treatment: { tax: "unknown", discount: "unknown", rounding: "unknown", uniform: false },
+  items: [{ ...reading.items[0], amount: "84.30" }, { ...reading.items[2], amount: "27.90", description: "Tarpaulin canvas" }] };
+export const itemAnswers = items => items.map(i => ({ id: i.id, included: true, amount: i.amount ?? "", reason: "Supplies for the club workshop" }));

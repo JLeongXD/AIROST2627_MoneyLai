@@ -1,18 +1,31 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { signedFile } from "@/lib/api";
 import type { Attachment } from "@/lib/types";
 import { errorMessage } from "@/lib/domain";
 export default function ReceiptPreview({
   attachments,
+  autoOpen = false,
 }: {
   attachments: Attachment[];
+  autoOpen?: boolean;
 }) {
-  const [selected, setSelected] = useState<Attachment | null>(null);
+  const [initial] = useState(() => attachments.find(a => a.kind === "receipt") ?? attachments[0]);
+  const [selected, setSelected] = useState<Attachment | null>(autoOpen ? initial ?? null : null);
   const [url, setUrl] = useState("");
-  const [busy, setBusy] = useState(false);
+  const [busy, setBusy] = useState(Boolean(autoOpen && initial));
   const [error, setError] = useState("");
   const [zoom, setZoom] = useState(false);
+  useEffect(() => {
+    if (!autoOpen || !initial) return;
+    let active = true;
+    void signedFile("receipts", initial.storage_path).then(url => {
+      if (active) { setSelected(initial); setUrl(url); }
+    }).catch(e => {
+      if (active) setError(errorMessage(e));
+    }).finally(() => { if (active) setBusy(false); });
+    return () => { active = false; };
+  }, [autoOpen, initial]);
   async function open(a: Attachment) {
     if (busy) return;
     setBusy(true);
@@ -34,7 +47,7 @@ export default function ReceiptPreview({
       <div className="section-heading">
         <div>
           <span className="eyebrow">THE EVIDENCE, UP CLOSE</span>
-          <h2>Receipt desk</h2>
+          <h2>{autoOpen ? "Original receipt & files" : "Receipt desk"}</h2>
         </div>
         {url && (
           <button

@@ -36,7 +36,10 @@ export function FeedbackProvider({ children }: { children: ReactNode }) {
       onMouseEnter={() => setPaused(true)} onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)} onBlur={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setPaused(false); }}>
       <div role={message.tone === "error" ? "alert" : "status"} aria-atomic="true" key={message.id}>
-        <strong>{message.tone === "progress" ? "◌ " : message.tone === "error" ? "! " : "✓ "}{message.title}</strong>
+        <strong className="feedback-title">
+          {message.tone === "progress" ? <span className="loading-spinner" aria-hidden="true" /> : <span aria-hidden="true">{message.tone === "error" ? "!" : "✓"}</span>}
+          <span>{message.title}</span>
+        </strong>
         {message.description && <p>{message.description}</p>}
       </div>
       {message.href && message.label && <a href={message.href}>{message.label} →</a>}

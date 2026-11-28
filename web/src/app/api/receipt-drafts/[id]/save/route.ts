@@ -30,10 +30,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const extraction = validateReceiptExtraction(s.extraction);
     let calculation;
     try { calculation = calculateAllocation(extraction, body.selection); } catch (e) { return json({ error: e instanceof Error ? e.message : "Invalid receipt selection." }, 400); }
+    if (["full", "auto", "simple"].includes(body.selection.mode) && Number(fields.amount) !== Number(calculation.expected_amount)) return json({ error: "Claim amount must match the confirmed receipt calculation." }, 400);
     const chosen = body.selection as ReceiptSelection;
     const selection: ReceiptSelection = { items: chosen.items.map(i => ({ id: i.id, included: i.included, amount: i.amount, reason: i.reason })),
       receipt_total: chosen.receipt_total, mode: chosen.mode, tax: chosen.tax, discount: chosen.discount, rounding: chosen.rounding,
-      adjustment_reason: chosen.adjustment_reason, correction_reason: chosen.correction_reason, confirmed: true };
+      ...(chosen.adjustment_treatment ? { adjustment_treatment: chosen.adjustment_treatment } : {}), ...(chosen.claimed_amount !== undefined ? { claimed_amount: chosen.claimed_amount, override_reason: chosen.override_reason } : {}), adjustment_reason: chosen.adjustment_reason, correction_reason: chosen.correction_reason, confirmed: true };
     const admin = receiptAdmin();
     const prepared = await client.rpc("ml_prepare_receipt_claim", { p_session: id, p_claim_id: body.claimId,
       p_amount: fields.amount, p_description: fields.description, p_date: fields.purchase_date, p_category: fields.category, p_revision: body.revision });

@@ -6,7 +6,9 @@ export async function GET(request: Request) {
   const next =
     url.searchParams.get("next") === "/update-password"
       ? "/update-password"
-      : "/dashboard";
+      : url.searchParams.get("next") === "/membership"
+        ? "/membership"
+        : "/dashboard";
   if (code) {
     try {
       const client = await createServerSupabaseClient();

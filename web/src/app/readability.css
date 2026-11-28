@@ -21,7 +21,21 @@
 .feedback-toast p { margin: 6px 0 10px; }
 .feedback-toast > a { text-decoration: underline; font-weight: 600; }
 .feedback-toast.error { border-color: #edb7ad; border-left-color: #b4423f; }
-.feedback-toast.progress { border-left-color: #946912; }
+.feedback-toast.progress { border-left-color: #176b5c; }
+.feedback-title { display: flex; align-items: center; gap: 10px; }
+.loading-spinner {
+  display: inline-block;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: conic-gradient(from 0deg, #176b5c00, #9dd9be 35%, #176b5c 85%, #176b5c);
+  -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  mask: radial-gradient(farthest-side, transparent calc(100% - 3px), #000 calc(100% - 2.5px));
+  animation: loading-rotate .9s linear infinite;
+}
+.loading-spinner-small { width: 18px; height: 18px; }
+@keyframes loading-rotate { to { transform: rotate(360deg); } }
 .feedback-close {
   position: absolute;
   top: 4px;
@@ -259,7 +273,7 @@
   text-align: center;
 }
 
-.hybrid-app :is(input:not([type="checkbox"]), select, textarea) {
+.hybrid-app :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
   min-height: 48px;
 }
 

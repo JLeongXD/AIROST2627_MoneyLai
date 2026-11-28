@@ -2,7 +2,7 @@ export type Role = "member" | "treasurer" | "president";
 export type ClaimStatus =
   "draft" | "submitted" | "needs_info" | "approved" | "rejected" | "paid" | "cancelled";
 export type Money = number | string;
-export type Profile = { id: string; display_name: string; role: Role };
+export type Profile = { id: string; display_name: string; role: Role; account_status: "active" | "invited" | "disabled" };
 export type Payout = {
   user_id: string;
   recipient_name: string;

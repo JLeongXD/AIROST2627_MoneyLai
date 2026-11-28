@@ -4,14 +4,14 @@ import { getServerSyncStatus, getSyncStatus, subscribeSyncStatus } from "@/lib/l
 
 export default function LiveSyncStatus() {
   const status = useSyncExternalStore(subscribeSyncStatus, getSyncStatus, getServerSyncStatus);
+  if (status === "active") return null;
+
   return (
     <div className={`sync-status ${status}`} role="status" aria-live="polite">
       <span aria-hidden="true">●</span>
       {status === "offline"
         ? "You are offline. Updates will resume when your connection returns."
-        : status === "delayed"
-          ? "Some updates could not be loaded. Displayed data may be outdated; retrying automatically."
-          : "Auto-sync every 5 seconds"}
+        : "Some updates could not be loaded. Displayed data may be outdated; retrying automatically."}
     </div>
   );
 }

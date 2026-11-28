@@ -48,6 +48,7 @@ export default function UpdatePasswordPage() {
         <span className="eyebrow">ACCOUNT RECOVERY</span>
         <h1>Set a new password</h1>
         <p>You will be returned to sign in after updating.</p>
+        {ready && user && <Notice>Setting a password for <strong>{user.email}</strong>. If this is a different account, sign out from your workspace and reopen the latest recovery email in a private window.</Notice>}
         {error && <Notice tone="error">{error}</Notice>}
         {ready && !user ? (
           <Notice tone="error">

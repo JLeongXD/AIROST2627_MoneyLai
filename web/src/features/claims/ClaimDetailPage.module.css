@@ -1,0 +1,10 @@
+.document[data-owner=true] { max-width: 940px; margin-inline: auto; }
+.document[data-owner=true] :global(.detail-grid) { grid-template-columns: minmax(0, 1fr); }
+.document :global(.claim-disclosure) > summary { cursor: pointer; font-size: 1rem; font-weight: 600; min-height: 28px; }
+.document :global(.claim-disclosure[open]) > summary { margin-bottom: 18px; }
+.document :global(.claim-disclosure) { scroll-margin-top: 140px; }
+.document :global(.claim-disclosure:target) { outline: 2px solid #a9c8b5; }
+.document[data-owner=true] :global(.next-step .button) { background: var(--glass-primary); color: #fff; border-color: #27604f; box-shadow: inset 0 1px 0 #ffffff59, 0 4px 12px #17544020; }
+.document :global(.claim-disclosure .ai-split) { margin-bottom: 0; }
+.document :global(.panel .panel) { box-shadow: none; }
+@media(max-width: 780px) { .document :global(.next-step) { flex-direction: column; align-items: stretch; gap: 14px; } .document :global(.next-step .button) { width: 100%; } }

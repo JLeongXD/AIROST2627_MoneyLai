@@ -6,6 +6,7 @@ import "./globals.css";
 import "./hybrid.css";
 import "./hybrid-shell.css";
 import "./readability.css";
+import "./liquid-glass.css";
 export const metadata: Metadata = {
   title: { default: "MoneyLai", template: "%s · MoneyLai" },
   description: "Club budgets, expense claims and reimbursements in one place.",

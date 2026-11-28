@@ -10,6 +10,8 @@ It includes optional Gemini receipt assistance, item-level claim allocation, cla
 
 ## Features and roles
 
+Google registration supports President approval: apply with Google, wait for approval, then set a MoneyLai password to activate. Active members can use Google or email/password; existing email invitations remain supported. Follow [Google registration setup](docs/GOOGLE_SIGNUP_SETUP.md) before production use. Migration 016 and Google/Supabase configuration are required.
+
 | Role | Main capabilities |
 | --- | --- |
 | Member | Maintain payout details; create and edit own drafts; upload receipts; submit, withdraw and revise eligible claims; answer information requests; track reimbursement. |
@@ -23,6 +25,7 @@ Additional features:
 - Claim-versus-receipt AI checks with consent, outdated-result detection and manual review fallback.
 - Potential duplicate detection using indexed file fingerprints and receipt details. A warning is not a finding of fraud.
 - Clarification requests and replies, with claim and activity audit histories.
+- Gmail notifications for approved claims and recorded payments, with a durable retry queue. Follow [email notification setup](docs/EMAIL_NOTIFICATIONS_SETUP.md); migration 017, sender credentials and a hosting scheduler are required.
 - Excel, PDF and ZIP activity exports with role-specific evidence access.
 - Five-second polling, focus and connectivity-triggered refresh, operation feedback and sync status. This is not a WebSocket subscription or an offline-write queue.
 - Desktop top navigation and mobile bottom navigation.
@@ -69,6 +72,10 @@ Create a Supabase project or use the existing MoneyLai project. Database SQL is 
 | 010 | Clarification workflow and receipt fingerprint indexing |
 | 012 | Activity exports and restoration of the claim-based budget model |
 | 013 | Optional receipt-first drafting, confirmed allocation plans and revision history |
+| 014 | Member invitations, access management and President handover |
+| 015 | Shared rolling AI usage allowance |
+| 016 | Google membership applications, President review and password activation |
+| 017 | Transactional claim approval/payment email queue and protected delivery operations |
 
 Migration 011 is retired and is not required for a fresh installation. Migration 012 can follow 010 or a deployment that previously applied the retired procurement migration. It disables the old procurement endpoints/guards while preserving historical data. The current application does not expose a procurement pre-approval workflow.
 
@@ -86,7 +93,7 @@ Create and confirm accounts through Supabase Authentication. New application pro
 
 Edit the example emails in [BOOTSTRAP_ROLES.sql](supabase/BOOTSTRAP_ROLES.sql), then run the script as the project owner to assign Treasurer and President roles. Use a second Treasurer if a Treasurer needs to submit personal claims: a person cannot approve their own claim.
 
-The application assumes one club with controlled account provisioning. Configure Auth registration settings accordingly. Do not commit account passwords or real payout information as demo data.
+The application assumes one club with President-controlled membership. Google self-registration requires allowing new Auth signups; these identities have no business access until approved and activated. Follow [the Google setup guide](docs/GOOGLE_SIGNUP_SETUP.md). Do not commit account passwords or real payout information as demo data.
 
 ### 4. Set environment variables
 
@@ -156,6 +163,7 @@ Export PDFs use the bundled Noto Sans SC font; retain its accompanying OFL licen
 | Route | Purpose |
 | --- | --- |
 | `/login` | Sign-in and password recovery request |
+| `/membership` | Google membership application, approval status and password activation |
 | `/dashboard` | Member/Treasurer overview |
 | `/activities` | Activity budgets, proposals and exports |
 | `/claims` | Own claim list, search and filters |

@@ -1,5 +1,6 @@
 import { createClient } from "./supabase/client";
 import { fileError } from "./domain";
+import { browserFetch } from "./browser-fetch";
 import type { ReceiptPlan } from "./ai/receipt-allocation";
 import type {
   Activity,
@@ -17,12 +18,21 @@ export async function rpc<T = void>(
 ): Promise<T> {
   const { data, error } = await createClient().rpc(name, args);
   if (error) throw error;
+  if ((name === "ml_review_claim" && args.p_decision === "approved") || name === "ml_record_payment") {
+    // Financial changes have committed. Email delivery must never turn success into failure.
+    try {
+      await browserFetch("/api/notifications/dispatch", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ claimId: args.p_claim_id }), signal: AbortSignal.timeout(5000),
+      });
+    } catch { /* The durable outbox is drained by the scheduler. */ }
+  }
   return data as T;
 }
 export async function getProfile(id: string) {
   const { data, error } = await createClient()
     .from("profiles")
-    .select("id,display_name,role")
+    .select("id,display_name,role,account_status")
     .eq("id", id)
     .single();
   if (error) throw error;
@@ -159,7 +169,7 @@ export async function uploadAttachment(
       .eq("storage_path", path);
     if (!checkError && data?.length === 0)
       await createClient().storage.from("receipts").remove([path]);
-    throw error;
+    if (checkError || !data?.length) throw error;
   }
   // Indexing is advisory; a temporary indexing failure must not lose an upload.
   if (kind === "receipt") {

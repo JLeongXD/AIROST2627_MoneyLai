@@ -8,6 +8,7 @@ import { errorMessage } from "@/lib/domain";
 import type { Profile } from "@/lib/types";
 import { Icon } from "./Creative";
 import LiveSyncStatus from "./LiveSyncStatus";
+import PresidentHandover from "./PresidentHandover";
 export function WorkspaceFrame({
   profile,
   children,
@@ -20,6 +21,7 @@ export function WorkspaceFrame({
   signingOut?: boolean;
 }) {
   const path = usePathname();
+  const claimFlow = path === "/claims/new" || /^\/claims\/[^/]+\/edit$/.test(path);
   const role = {
     member: "Member",
     treasurer: "Treasurer",
@@ -36,10 +38,11 @@ export function WorkspaceFrame({
       ? [{ href: "/treasury", label: "Review desk", icon: "wallet" }]
       : []),
     { href: "/activities", label: "Activities", icon: "activity" },
+    ...(profile.role === "president" ? [{ href: "/members", label: "Members", icon: "user" }] : []),
     { href: "/profile", label: "Profile", icon: "user" },
   ];
   return (
-    <div className="hybrid-app" data-role={profile.role}>
+    <div className="hybrid-app" data-role={profile.role} data-claim-flow={claimFlow}>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -48,7 +51,7 @@ export function WorkspaceFrame({
           <Link className="hybrid-brand" href={links[0].href}>
             <span>M</span>MoneyLai<i>.</i>
           </Link>
-          <nav className="desktop-nav" aria-label="Main navigation">
+          {!claimFlow && <nav className="desktop-nav" aria-label="Main navigation">
             {links.map((l) => (
               <Link
                 key={l.href}
@@ -62,7 +65,7 @@ export function WorkspaceFrame({
                 {l.label}
               </Link>
             ))}
-          </nav>
+          </nav>}
           <div className="nav-account">
             <span className="role-pill">{role}</span>
             <details className="profile-menu">
@@ -87,19 +90,16 @@ export function WorkspaceFrame({
           </div>
         </div>
       </header>
-      <div className="workspace-context">
-        <span>Club Finance, Simplified.</span>
-        <span>Every Ringgit. Every Receipt. Every Decision.</span>
-      </div>
       <main id="main-content" className="page-content hybrid-content">
         <LiveSyncStatus />
+        <PresidentHandover />
         {children}
       </main>
-      <footer className="hybrid-footer">
+      {!claimFlow && <footer className="hybrid-footer">
         <span>MoneyLai © {new Date().getFullYear()}</span>
         <span>A little clarity for every club expense.</span>
-      </footer>
-      <nav className="bottom-nav" aria-label="Mobile navigation">
+      </footer>}
+      {!claimFlow && <nav className="bottom-nav" aria-label="Mobile navigation">
         {links.map((l) => (
           <Link
             key={l.href}
@@ -114,7 +114,7 @@ export function WorkspaceFrame({
             <span>{l.label}</span>
           </Link>
         ))}
-      </nav>
+      </nav>}
     </div>
   );
 }
@@ -125,7 +125,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
   const [message, setMessage] = useState("");
   useEffect(() => {
     if (ready && !user && !error) router.replace("/login");
-  }, [ready, user, error, router]);
+    if (ready && user && profile?.account_status === "invited") router.replace("/membership");
+  }, [ready, user, profile?.account_status, error, router]);
   async function signOut() {
     setSigningOut(true);
     setMessage("");
@@ -149,12 +150,23 @@ export default function AppShell({ children }: { children: ReactNode }) {
   if (error || !profile)
     return (
       <main className="setup-screen">
-        <h1>Account unavailable</h1>
-        <p>{error || "Redirecting to sign in…"}</p>
-        <Link href="/login">Go to sign in</Link>
-        {user && <button onClick={signOut}>Sign out</button>}
+        <section className="panel narrow">
+          <h1>Account unavailable</h1>
+          <p>{error || "Redirecting to sign in…"}</p>
+          <Link href="/login">Go to sign in</Link>
+          {user && <button onClick={signOut}>Sign out</button>}
+        </section>
       </main>
     );
+  if (profile.account_status !== "active")
+    return <main className="setup-screen"><div className="panel narrow">
+      <h1>{profile.account_status === "disabled" ? "Account disabled" : "Membership not activated"}</h1>
+      <p>{profile.account_status === "disabled" ? "Your club access has been disabled. Contact the President if you need access restored. Your existing financial records are retained."
+        : "Continue to the membership page to check your application or complete your setup."}</p>
+      {profile.account_status === "invited" && <Link className="button primary" href="/membership">Check membership status</Link>}
+      <button className="button secondary" onClick={signOut} disabled={signingOut}>{signingOut ? "Signing out…" : "Sign out"}</button>
+      {message && <p role="alert">{message}</p>}
+    </div></main>;
   return (
     <WorkspaceFrame
       profile={profile}

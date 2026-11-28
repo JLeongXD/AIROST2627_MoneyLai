@@ -1,0 +1,6 @@
+.notice { margin: 16px 0; padding: 16px; border: 1px solid #d8bd74; border-radius: 16px; background: #fff8e7; color: #654b16; overflow-wrap: anywhere; }
+.amounts { margin: 12px 0; }
+.amounts > div { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 16px; padding: 3px 0; }
+.amounts dt { flex: 1; }
+.amounts dd { margin: 0; font-weight: 600; }
+.notice p { margin: 0; line-height: 1.6; }

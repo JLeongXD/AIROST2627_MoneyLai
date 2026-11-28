@@ -11,8 +11,10 @@ import { useFeedback, useOperationError } from "./FeedbackProvider";
 
 export default function BudgetRequests({
   onChanged,
+  compact = false,
 }: {
   onChanged: () => void;
+  compact?: boolean;
 }) {
   const { profile, user } = useAuth();
   const allowed =
@@ -80,10 +82,10 @@ export default function BudgetRequests({
   return (
     <section className={`panel ${styles.section}`}>
       <div className="section-heading">
-        <div>
+        {!compact && <div>
           <span className="eyebrow">PROPOSE. REVIEW. FUND.</span>
           <h2>Budget requests &amp; history</h2>
-        </div>
+        </div>}
         <button
           className="button secondary"
           disabled={state.loading || busy}
@@ -92,11 +94,11 @@ export default function BudgetRequests({
           Refresh requests
         </button>
       </div>
-      <p>
+      {compact ? <details className={styles.meta}><summary>Approval rules</summary><p>Changes take effect after President approval. Proposed amounts replace the total budget; they are not additional funds.</p></details> : <p>
         New activities and activity updates take effect only after President
         approval. Proposed amounts are the new total budgets, not additional
         amounts.
-      </p>
+      </p>}
       <label className={styles.filter}>
         Request status
         <select value={filter} onChange={(e) => setFilter(e.target.value)}>

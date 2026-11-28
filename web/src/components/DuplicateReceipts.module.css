@@ -1,0 +1,7 @@
+.embedded { min-width: 0; border-top: 1px solid #dce5df; padding-top: 16px; }
+.embedded h3 { margin: 0 0 6px; font-size: 1rem; }
+.embedded > p { margin: 6px 0 10px; line-height: 1.5; }
+.match { display: grid; gap: 6px; padding: 14px 0; border-bottom: 1px solid #dce5df; overflow-wrap: anywhere; }
+.match > span { font-weight: 600; }
+.match small { color: #52695c; line-height: 1.5; }
+.coverage { margin-top: 14px; }
